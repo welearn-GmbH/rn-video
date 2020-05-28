@@ -1,7 +1,8 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {StyleSheet, requireNativeComponent, NativeModules, View, ViewPropTypes, Image, Platform, findNodeHandle} from 'react-native';
+import {StyleSheet, requireNativeComponent, NativeModules, View, ViewPropTypes, Platform, findNodeHandle} from 'react-native';
 import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
+import FastImage from 'react-native-fast-image';
 import TextTrackType from './TextTrackType';
 import FilterType from './FilterType';
 import VideoResizeMode from './VideoResizeMode.js';
@@ -27,17 +28,17 @@ export default class Video extends Component {
   setNativeProps(nativeProps) {
     this._root.setNativeProps(nativeProps);
   }
-  
+
   toTypeString(x) {
     switch (typeof x) {
       case "object":
-        return x instanceof Date 
-          ? x.toISOString() 
+        return x instanceof Date
+          ? x.toISOString()
           : JSON.stringify(x); // object, null
       case "undefined":
         return "";
       default: // boolean, number, string
-        return x.toString();      
+        return x.toString();
     }
   }
 
@@ -53,7 +54,7 @@ export default class Video extends Component {
 
   seek = (time, tolerance = 100) => {
     if (isNaN(time)) throw new Error('Specified time is not a number');
-    
+
     if (Platform.OS === 'ios') {
       this.setNativeProps({
         seek: {
@@ -124,7 +125,7 @@ export default class Video extends Component {
     if (this.props.onBandwidthUpdate) {
       this.props.onBandwidthUpdate(event.nativeEvent);
     }
-  };  
+  };
 
   _onSeek = (event) => {
     if (this.props.onSeek) {
@@ -192,7 +193,7 @@ export default class Video extends Component {
       this.props.onPlaybackRateChange(event.nativeEvent);
     }
   };
-  
+
   _onExternalPlaybackChange = (event) => {
     if (this.props.onExternalPlaybackChange) {
       this.props.onExternalPlaybackChange(event.nativeEvent);
@@ -245,7 +246,7 @@ export default class Video extends Component {
     if (uri && uri.match(/^\//)) {
       uri = `file://${uri}`;
     }
-    
+
     if (!uri) {
       console.warn('Trying to load empty source.');
     }
@@ -305,10 +306,7 @@ export default class Video extends Component {
       onRestoreUserInterfaceForPictureInPictureStop: this._onRestoreUserInterfaceForPictureInPictureStop,
     });
 
-    const posterStyle = {
-      ...StyleSheet.absoluteFillObject,
-      resizeMode: this.props.posterResizeMode || 'contain',
-    };
+    const posterResizeMode = this.props.posterResizeMode || 'contain';
 
     return (
       <View style={nativeProps.style}>
@@ -318,7 +316,11 @@ export default class Video extends Component {
           style={StyleSheet.absoluteFill}
         />
         {this.state.showPoster && (
-          <Image style={posterStyle} source={{ uri: this.props.poster }} />
+          <FastImage
+            style={StyleSheet.absoluteFillObject}
+            source={{ uri: this.props.poster }}
+            resizeMode={FastImage.resizeMode[posterResizeMode]}
+          />
         )}
       </View>
     );
@@ -380,7 +382,7 @@ Video.propTypes = {
   maxBitRate: PropTypes.number,
   resizeMode: PropTypes.string,
   poster: PropTypes.string,
-  posterResizeMode: Image.propTypes.resizeMode,
+  posterResizeMode: PropTypes.string,
   repeat: PropTypes.bool,
   allowsExternalPlayback: PropTypes.bool,
   selectedAudioTrack: PropTypes.shape({
@@ -396,7 +398,7 @@ Video.propTypes = {
       PropTypes.string,
       PropTypes.number
     ])
-  }),  
+  }),
   selectedTextTrack: PropTypes.shape({
     type: PropTypes.string.isRequired,
     value: PropTypes.oneOfType([
