@@ -1469,7 +1469,6 @@ class ReactExoplayerView extends FrameLayout implements
                 && packageManager
                 .hasSystemFeature(
                         PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
-            long videoPosition = player.getCurrentPosition();
             Activity activity = themedReactContext.getCurrentActivity();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 PictureInPictureParams.Builder params = new PictureInPictureParams.Builder();
