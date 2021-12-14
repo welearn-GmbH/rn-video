@@ -20,6 +20,7 @@ import android.view.Window;
 import android.view.accessibility.CaptioningManager;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import com.brentvatne.react.R;
 import com.brentvatne.receiver.AudioBecomingNoisyReceiver;
@@ -220,8 +221,9 @@ class ReactExoplayerView extends FrameLayout implements
         pipReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                boolean isInPictureInPictureMode = intent.getBooleanExtra("isInPictureInPictureMode", false);
-                self.onPictureInPictureModeChanged(isInPictureInPictureMode);
+                boolean isInPIPMode = intent.getBooleanExtra("isInPictureInPictureMode", false);
+                isInPictureInPictureMode = isInPIPMode;
+                self.onPictureInPictureModeChanged(isInPIPMode);
             }
         };
 
@@ -279,6 +281,14 @@ class ReactExoplayerView extends FrameLayout implements
          * Leave this here in case it causes issues.
          */
         // stopPlayback();
+        Activity activity = themedReactContext.getCurrentActivity();
+        if (activity == null) return;
+        try {
+            activity.unregisterReceiver(pipReceiver);
+            activity.unregisterReceiver(leaveReceiver);
+        } catch (Exception ignore) {
+            // ignore if already unregistered
+        }
     }
 
     // LifecycleEventListener implementation
