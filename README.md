@@ -77,7 +77,7 @@ Video only:
 
 ```diff
   pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec'
-+  `pod 'react-native-video', :path => '../node_modules/react-native-video/react-native-video.podspec'`
++  `pod 'react-native-video', :podspec => '../node_modules/react-native-video/react-native-video.podspec'`
 end
 ```
 
@@ -85,7 +85,7 @@ Video with caching ([more info](docs/caching.md)):
 
 ```diff
   pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec'
-+  `pod 'react-native-video/VideoCaching', :path => '../node_modules/react-native-video/react-native-video.podspec'`
++  `pod 'react-native-video/VideoCaching', :podspec => '../node_modules/react-native-video/react-native-video.podspec'`
 end
 ```
 
@@ -187,31 +187,45 @@ protected List<ReactPackage> getPackages() {
 <details>
   <summary>Windows RNW C++/WinRT details</summary>
 
+#### Autolinking
+
+**React Native Windows 0.63 and above**
+
+Autolinking should automatically add react-native-video to your app.
+
+#### Manual Linking
+
+**React Native Windows 0.62**
+
 Make the following additions to the given files manually:
 
-#### **windows/myapp.sln**
+##### **windows\myapp.sln**
 
-Add the `ReactNativeVideoCPP` project to your solution.
+Add the _ReactNativeVideoCPP_ project to your solution (eg. `windows\myapp.sln`):
 
-1. Open the solution in Visual Studio 2019
-2. Right-click Solution icon in Solution Explorer > Add > Existing Project
-   Select `node_modules\react-native-video\windows\ReactNativeVideoCPP\ReactNativeVideoCPP.vcxproj`
+1. Open your solution in Visual Studio 2019
+2. Right-click Solution icon in Solution Explorer > Add > Existing Project...
+3. Select `node_modules\react-native-video\windows\ReactNativeVideoCPP\ReactNativeVideoCPP.vcxproj`
 
-#### **windows/myapp/myapp.vcxproj**
+##### **windows\myapp\myapp.vcxproj**
 
-Add a reference to `ReactNativeVideoCPP` to your main application project. From Visual Studio 2019:
+Add a reference to _ReactNativeVideoCPP_ to your main application project (eg. `windows\myapp\myapp.vcxproj`):
 
-1. Right-click main application project > Add > Reference...
-  Check `ReactNativeVideoCPP` from Solution Projects.
+1. Open your solution in Visual Studio 2019
+2. Right-click main application project > Add > Reference...
+3. Check _ReactNativeVideoCPP_ from Solution Projects
 
-2. Modify files below to add the video package providers to your main application project
-#### **pch.h**
+##### **pch.h**
 
 Add `#include "winrt/ReactNativeVideoCPP.h"`.
 
-#### **app.cpp**
+##### **app.cpp**
 
 Add `PackageProviders().Append(winrt::ReactNativeVideoCPP::ReactPackageProvider());` before `InitializeComponent();`.
+
+**React Native Windows 0.61 and below**
+
+Follow the manual linking instuctions for React Native Windows 0.62 above, but substitute _ReactNativeVideoCPP61_ for _ReactNativeVideoCPP_.
 
 </details>
 
@@ -309,6 +323,7 @@ var styles = StyleSheet.create({
 * [selectedAudioTrack](#selectedaudiotrack)
 * [selectedTextTrack](#selectedtexttrack)
 * [selectedVideoTrack](#selectedvideotrack)
+* [showPictureInPictureOnLeave](#showpictureinpictureonleave)
 * [source](#source)
 * [stereoPan](#stereopan)
 * [textTracks](#texttracks)
@@ -570,7 +585,38 @@ Determine whether the media should played as picture in picture.
 * **false (default)** - Don't not play as picture in picture
 * **true** - Play the media as picture in picture
 
-Platforms: iOS
+To use this feature on AndroidExoPlayer, you must:
+* Add following to the AndroidManifest.xml -> MainActivity:
+```
+  android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout"
+  android:resizeableActivity="true"
+  android:supportsPictureInPicture="true"
+```
+* [Enable PIP feature for you app](https://support.google.com/youtube/answer/7552722?co=GENIE.Platform%3DAndroid&hl=en) in your device settings
+* Add following methods to MainActivity:
+```
+    // To let JS knows about PIP mode change. 
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration?) {
+       super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+       val intent = Intent("onPictureInPictureModeChanged")
+       intent.putExtra("isInPictureInPictureMode", isInPictureInPictureMode)
+       this.sendBroadcast(intent)
+    }
+    
+    // To trigger PIP mode by pressing `Home` or `Recent` buttons
+    override fun onUserLeaveHint() {
+       val intent = Intent("onUserLeaveHint")
+       this.sendBroadcast(intent)
+       super.onUserLeaveHint()
+    }
+        
+    // To close and kill the app when closing PIP window.
+    override fun onStop() {
+       super.onStop()
+       finishAndRemoveTask()
+    }
+```
+Platforms: iOS, Android ExoPlayer
 
 #### playInBackground
 Determine whether the media should continue playing while the app is in the background. This allows customers to continue listening to the audio.
@@ -753,8 +799,21 @@ If a track matching the specified Type (and Value if appropriate) is unavailable
 
 Platforms: Android ExoPlayer
 
+#### showPictureInPictureOnLeave
+Determine whether player should enter picture in picture mode while pressing Back or Recent hardware button.
+* **false (default)** - Don't not enter picture in picture on leave
+* **true** - Enter picture in picture on leave
+
+Platforms: Android ExoPlayer (when following [this](#pictureinpicture))
+
 #### source
 Sets the media source. You can pass an asset loaded via require or an object with a uri.
+
+Setting the source will trigger the player to attempt to load the provided media with all other given props. Please be sure that all props are provided before/at the same time as setting the source.
+
+Rendering the player component with a null source will init the player, and start playing once a source value is provided.
+
+Providing a null source value after loading a previous source will stop playback, and clear out the previous source content.
 
 The docs for this prop are incomplete and will be updated as each option is investigated and tested.
 
@@ -1073,7 +1132,7 @@ isActive: true
 }
 ```
 
-Platforms:  iOS
+Platforms:  iOS, Android ExoPlayer (when following [this](#pictureinpicture) )
 
 #### onPlaybackRateChange
 Callback function that is called when the rate of playback changes - either paused or starts/resumes.
@@ -1302,7 +1361,7 @@ On iOS, if you would like to allow other apps to play music over your video comp
 }
 ```
 
-You can also use the [ignoreSilentSwitch](ignoresilentswitch) prop.
+You can also use the [ignoreSilentSwitch](#ignoresilentswitch) prop.
 </details>
 
 ### Android Expansion File Usage
