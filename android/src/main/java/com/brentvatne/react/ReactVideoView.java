@@ -709,22 +709,13 @@ public class ReactVideoView extends ScalableVideoView implements
 
     @Override
     protected void onDetachedFromWindow() {
-        mMediaPlayerValid = false;
-        super.onDetachedFromWindow();
-        setKeepScreenOn(false);
+        // override without super call prevents release of player and allows video view to
+        // be detached and reattached for teleportation without losing video progress
     }
 
     @Override
     protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-
-        if(mMainVer>0) {
-            setSrc(mSrcUriString, mSrcType, mSrcIsNetwork, mSrcIsAsset, mRequestHeaders, mMainVer, mPatchVer);
-        }
-        else {
-            setSrc(mSrcUriString, mSrcType, mSrcIsNetwork, mSrcIsAsset, mRequestHeaders);
-        }
-        setKeepScreenOn(mPreventsDisplaySleepDuringVideoPlayback);
+        super.onAttachedToWindow(); // required
     }
 
     @Override
