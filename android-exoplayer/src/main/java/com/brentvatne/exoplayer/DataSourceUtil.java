@@ -4,6 +4,7 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.modules.network.CookieJarContainer;
 import com.facebook.react.modules.network.ForwardingCookieHandler;
 import com.facebook.react.modules.network.OkHttpClientProvider;
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource;
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
@@ -11,6 +12,7 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 
+import okhttp3.Call;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
 import java.util.Map;
@@ -84,10 +86,12 @@ public class DataSourceUtil {
         CookieJarContainer container = (CookieJarContainer) client.cookieJar();
         ForwardingCookieHandler handler = new ForwardingCookieHandler(context);
         container.setCookieJar(new JavaNetCookieJar(handler));
-        OkHttpDataSourceFactory okHttpDataSourceFactory = new OkHttpDataSourceFactory(client, getUserAgent(context), bandwidthMeter);
+        OkHttpDataSource.Factory okHttpDataSourceFactory = new OkHttpDataSource.Factory(client);
 
         if (requestHeaders != null)
-            okHttpDataSourceFactory.getDefaultRequestProperties().set(requestHeaders);
+            okHttpDataSourceFactory
+                    .setUserAgent(getUserAgent(context))
+                    .setDefaultRequestProperties(requestHeaders);
 
         return okHttpDataSourceFactory;
     }

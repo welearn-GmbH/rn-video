@@ -13,18 +13,14 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.video.VideoListener;
-import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.TracksInfo;
 import com.google.android.exoplayer2.text.Cue;
-import com.google.android.exoplayer2.text.TextRenderer;
 import com.google.android.exoplayer2.text.TextOutput;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.SubtitleView;
+import com.google.android.exoplayer2.video.VideoSize;
 
 import java.util.List;
 
@@ -36,7 +32,7 @@ public final class ExoPlayerView extends FrameLayout {
     private final SubtitleView subtitleLayout;
     private final AspectRatioFrameLayout layout;
     private final ComponentListener componentListener;
-    private SimpleExoPlayer player;
+    private ExoPlayer player;
     private Context context;
     private ViewGroup.LayoutParams layoutParams;
 
@@ -121,20 +117,11 @@ public final class ExoPlayerView extends FrameLayout {
         shutterView.setVisibility(this.hideShutterView ? View.INVISIBLE : View.VISIBLE);
     }
 
-    /**
-     * Set the {@link SimpleExoPlayer} to use. The {@link SimpleExoPlayer#addTextOutput} and
-     * {@link SimpleExoPlayer#addVideoListener} method of the player will be called and previous
-     * assignments are overridden.
-     *
-     * @param player The {@link SimpleExoPlayer} to use.
-     */
-    public void setPlayer(SimpleExoPlayer player) {
+    public void setPlayer(ExoPlayer player) {
         if (this.player == player) {
             return;
         }
         if (this.player != null) {
-            this.player.removeTextOutput(componentListener);
-            this.player.removeVideoListener(componentListener);
             this.player.removeListener(componentListener);
             clearVideoView();
         }
@@ -142,17 +129,10 @@ public final class ExoPlayerView extends FrameLayout {
         shutterView.setVisibility(VISIBLE);
         if (player != null) {
             setVideoView();
-            player.addVideoListener(componentListener);
             player.addListener(componentListener);
-            player.addTextOutput(componentListener);
         }
     }
 
-    /**
-     * Sets the resize mode which can be of value {@link ResizeMode.Mode}
-     *
-     * @param resizeMode The resize mode.
-     */
     public void setResizeMode(@ResizeMode.Mode int resizeMode) {
         if (layout.getResizeMode() != resizeMode) {
             layout.setResizeMode(resizeMode);
@@ -161,12 +141,6 @@ public final class ExoPlayerView extends FrameLayout {
 
     }
 
-    /**
-     * Get the view onto which video is rendered. This is either a {@link SurfaceView} (default)
-     * or a {@link TextureView} if the {@code use_texture_view} view attribute has been set to true.
-     *
-     * @return either a {@link SurfaceView} or a {@link TextureView}.
-     */
     public View getVideoSurfaceView() {
         return surfaceView;
     }
@@ -214,21 +188,15 @@ public final class ExoPlayerView extends FrameLayout {
         layout.invalidateAspectRatio();
     }
 
-    private final class ComponentListener implements VideoListener,
-            TextOutput, ExoPlayer.EventListener {
-
-        // TextRenderer.Output implementation
-
+    private final class ComponentListener implements Player.Listener {
         @Override
         public void onCues(List<Cue> cues) {
             subtitleLayout.onCues(cues);
         }
 
-        // SimpleExoPlayer.VideoListener implementation
-
         @Override
-        public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
-            layout.setAspectRatio(height == 0 ? 1 : (width * pixelWidthHeightRatio) / height);
+        public void onVideoSizeChanged(VideoSize videoSize) {
+            layout.setAspectRatio(videoSize.height == 0 ? 1 : (videoSize.width * videoSize.pixelWidthHeightRatio) / videoSize.height);
             post(measureAndLayout);
         }
 
@@ -237,57 +205,11 @@ public final class ExoPlayerView extends FrameLayout {
             shutterView.setVisibility(INVISIBLE);
         }
 
-        // ExoPlayer.EventListener implementation
-
         @Override
-        public void onLoadingChanged(boolean isLoading) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onPlayerError(ExoPlaybackException e) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onPositionDiscontinuity(int reason) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onTimelineChanged(Timeline timeline, Object manifest, int reason) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+        public void onTracksInfoChanged(TracksInfo tracksInfo) {
             updateForCurrentTrackSelections();
         }
 
-        @Override
-        public void onPlaybackParametersChanged(PlaybackParameters params) {
-            // Do nothing
-        }
-
-        @Override
-        public void onSeekProcessed() {
-            // Do nothing.
-        }
-
-        @Override
-        public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onRepeatModeChanged(int repeatMode) {
-            // Do nothing.
-        }
     }
 
 }
