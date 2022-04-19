@@ -906,13 +906,18 @@ static int const RCTVideoUnset = -1;
   }
 }
 
+
 - (void)setupPipController {
-  if (!_pipController && _playerLayer && [AVPictureInPictureController isPictureInPictureSupported]) {
+  if (_playerLayer && [AVPictureInPictureController isPictureInPictureSupported]) {
     [[AVAudioSession sharedInstance] setActive:YES error:nil];
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
     // Create new controller passing reference to the AVPlayerLayer
     _pipController = [[AVPictureInPictureController alloc] initWithPlayerLayer:_playerLayer];
-    _pipController.canStartPictureInPictureAutomaticallyFromInline = true;
+    if (@available(iOS 14.2, *)) {
+        _pipController.canStartPictureInPictureAutomaticallyFromInline = true;
+    } else {
+        // todo
+    }
     _pipController.delegate = self;
   }
 }
@@ -2022,13 +2027,6 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
   
 }
 
-- (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController restoreUserInterfaceForPictureInPictureStopWithCompletionHandler:(void (^)(BOOL))completionHandler {
-  NSAssert(_restoreUserInterfaceForPIPStopCompletionHandler == NULL, @"restoreUserInterfaceForPIPStopCompletionHandler was not called after picture in picture was exited.");
-  if (self.onRestoreUserInterfaceForPictureInPictureStop) {
-    self.onRestoreUserInterfaceForPictureInPictureStop(@{});
-  }
-  _restoreUserInterfaceForPIPStopCompletionHandler = completionHandler;
-}
 #endif
 
 @end
