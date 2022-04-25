@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		905914D42813568700E6DEFE /* RCTVideoPersistenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D4E66F280EF68200569109 /* RCTVideoPersistenceManager.swift */; };
+		905914D52813568D00E6DEFE /* RCTVideoPersistenceManagerBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 90D4C5502813452A00446966 /* RCTVideoPersistenceManagerBridge.m */; };
+		905914D62813568D00E6DEFE /* RCTVideoPersistenceManagerBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 90D4C5502813452A00446966 /* RCTVideoPersistenceManagerBridge.m */; };
+		905914D72813568F00E6DEFE /* RCTVideoPersistenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D4E66F280EF68200569109 /* RCTVideoPersistenceManager.swift */; };
+		905914D82813569900E6DEFE /* HLSAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D4E671280EFF5B00569109 /* HLSAsset.swift */; };
+		90D4E672280EFF5B00569109 /* HLSAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90D4E671280EFF5B00569109 /* HLSAsset.swift */; };
 		D1107C0A2110259000073188 /* UIView+FindUIViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D1107C032110259000073188 /* UIView+FindUIViewController.m */; };
 		D1107C0B2110259000073188 /* UIView+FindUIViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D1107C032110259000073188 /* UIView+FindUIViewController.m */; };
 		D1107C0C2110259000073188 /* RCTVideo.m in Sources */ = {isa = PBXBuildFile; fileRef = D1107C052110259000073188 /* RCTVideo.m */; };
@@ -41,6 +47,10 @@
 /* Begin PBXFileReference section */
 		134814201AA4EA6300B7C361 /* libRCTVideo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRCTVideo.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		641E28441F0EEC8500443AF6 /* libRCTVideo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRCTVideo.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		90D4C5502813452A00446966 /* RCTVideoPersistenceManagerBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = RCTVideoPersistenceManagerBridge.m; path = Video/RCTVideoPersistenceManagerBridge.m; sourceTree = "<group>"; };
+		90D4E66F280EF68200569109 /* RCTVideoPersistenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RCTVideoPersistenceManager.swift; path = Video/RCTVideoPersistenceManager.swift; sourceTree = "<group>"; };
+		90D4E671280EFF5B00569109 /* HLSAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = HLSAsset.swift; path = Video/HLSAsset.swift; sourceTree = "<group>"; };
+		90D4E67728113D6C00569109 /* RCTVideoBridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RCTVideoBridgingHeader.h; path = Video/RCTVideoBridgingHeader.h; sourceTree = "<group>"; };
 		D1107C012110259000073188 /* RCTVideoPlayerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTVideoPlayerViewController.h; path = Video/RCTVideoPlayerViewController.h; sourceTree = "<group>"; };
 		D1107C022110259000073188 /* RCTVideoPlayerViewControllerDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTVideoPlayerViewControllerDelegate.h; path = Video/RCTVideoPlayerViewControllerDelegate.h; sourceTree = "<group>"; };
 		D1107C032110259000073188 /* UIView+FindUIViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "UIView+FindUIViewController.m"; path = "Video/UIView+FindUIViewController.m"; sourceTree = "<group>"; };
@@ -88,6 +98,10 @@
 		58B511D21A9E6C8500147676 = {
 			isa = PBXGroup;
 			children = (
+				90D4E67728113D6C00569109 /* RCTVideoBridgingHeader.h */,
+				90D4E66F280EF68200569109 /* RCTVideoPersistenceManager.swift */,
+				90D4C5502813452A00446966 /* RCTVideoPersistenceManagerBridge.m */,
+				90D4E671280EFF5B00569109 /* HLSAsset.swift */,
 				D1107C072110259000073188 /* RCTVideo.h */,
 				D1107C052110259000073188 /* RCTVideo.m */,
 				D1107C092110259000073188 /* RCTVideoManager.h */,
@@ -151,6 +165,7 @@
 				TargetAttributes = {
 					58B511DA1A9E6C8500147676 = {
 						CreatedOnToolsVersion = 6.1.1;
+						LastSwiftMigration = 1330;
 					};
 					641E28431F0EEC8500443AF6 = {
 						CreatedOnToolsVersion = 8.3.3;
@@ -163,6 +178,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 58B511D21A9E6C8500147676;
@@ -181,8 +197,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				905914D62813568D00E6DEFE /* RCTVideoPersistenceManagerBridge.m in Sources */,
 				D1107C0A2110259000073188 /* UIView+FindUIViewController.m in Sources */,
 				D1107C102110259000073188 /* RCTVideoPlayerViewController.m in Sources */,
+				905914D42813568700E6DEFE /* RCTVideoPersistenceManager.swift in Sources */,
+				90D4E672280EFF5B00569109 /* HLSAsset.swift in Sources */,
 				D1107C0E2110259000073188 /* RCTVideoManager.m in Sources */,
 				D1107C0C2110259000073188 /* RCTVideo.m in Sources */,
 			);
@@ -192,7 +211,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				905914D52813568D00E6DEFE /* RCTVideoPersistenceManagerBridge.m in Sources */,
 				D1107C0B2110259000073188 /* UIView+FindUIViewController.m in Sources */,
+				905914D82813569900E6DEFE /* HLSAsset.swift in Sources */,
+				905914D72813568F00E6DEFE /* RCTVideoPersistenceManager.swift in Sources */,
 				D1107C112110259000073188 /* RCTVideoPlayerViewController.m in Sources */,
 				D1107C0F2110259000073188 /* RCTVideoManager.m in Sources */,
 				D1107C0D2110259000073188 /* RCTVideo.m in Sources */,
@@ -220,6 +242,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEFINES_MODULE = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -236,10 +259,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/react-native-video-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(MODULE_NAME)-Swift.h";
 			};
 			name = Debug;
 		};
@@ -261,6 +286,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = YES;
+				DEFINES_MODULE = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -270,9 +296,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(PROJECT_DIR)/react-native-video-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "$(MODULE_NAME)-Swift.h";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -280,30 +308,45 @@
 		58B511F01A9E6C8500147676 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				DEFINES_MODULE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					"$(SRCROOT)/Vendor/SPTPersistentCache/include/**",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_MODULE_NAME = RCTVideo;
 				PRODUCT_NAME = RCTVideo;
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = RCTVideoBridgingHeader.h;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "react_native_video-Swift.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
 		58B511F11A9E6C8500147676 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				DEFINES_MODULE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					"$(SRCROOT)/Vendor/SPTPersistentCache/include/**",
 				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_MODULE_NAME = RCTVideo;
 				PRODUCT_NAME = RCTVideo;
 				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = RCTVideoBridgingHeader.h;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "react_native_video-Swift.h";
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -316,8 +359,10 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_MODULE_NAME = RCTVideo;
 				PRODUCT_NAME = RCTVideo;
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;
@@ -335,8 +380,10 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_MODULE_NAME = RCTVideo;
 				PRODUCT_NAME = RCTVideo;
 				SDKROOT = appletvos;
 				SKIP_INSTALL = YES;

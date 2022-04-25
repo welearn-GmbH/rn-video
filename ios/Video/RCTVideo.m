@@ -1,3 +1,4 @@
+#import <react_native_video-Swift.h>
 #import <React/RCTConvert.h>
 #import "RCTVideo.h"
 #import <React/RCTBridgeModule.h>
@@ -5,6 +6,7 @@
 #import <React/UIView+React.h>
 #include <MediaAccessibility/MediaAccessibility.h>
 #include <AVFoundation/AVFoundation.h>
+
 
 static NSString *const statusKeyPath = @"status";
 static NSString *const playbackLikelyToKeepUpKeyPath = @"playbackLikelyToKeepUp";

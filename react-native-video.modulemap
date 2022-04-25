@@ -1,0 +1,6 @@
+module react-native-video {
+  umbrella header ""
+  
+  export *
+  module * { export * }
+}

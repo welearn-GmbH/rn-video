@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { StyleSheet, requireNativeComponent, NativeModules, View, ViewPropTypes, Image, Platform, findNodeHandle } from 'react-native';
+import React, { Component } from 'react';
+import { findNodeHandle, Image, NativeEventEmitter, NativeModules, Platform, requireNativeComponent, StyleSheet, View, ViewPropTypes } from 'react-native';
 import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
-import TextTrackType from './TextTrackType';
-import FilterType from './FilterType';
 import DRMType from './DRMType';
+import FilterType from './FilterType';
+import TextTrackType from './TextTrackType';
 import VideoResizeMode from './VideoResizeMode.js';
 
 const styles = StyleSheet.create({
@@ -13,7 +13,51 @@ const styles = StyleSheet.create({
   },
 });
 
-export { TextTrackType, FilterType, DRMType };
+const downloadHlsAsset = async (name, hlsUrl) => {
+  return await NativeModules.AssetPersistenceManager.downloadStream(name, hlsUrl)
+}
+
+const cancelHlsAssetDownload = async (hlsUrl) => {
+  return await NativeModules.AssetPersistenceManager.cancelDownload(hlsUrl)
+}
+
+const deleteHlsAsset = async (hlsUrl) => {
+  return await NativeModules.AssetPersistenceManager.deleteAsset(hlsUrl)
+}
+
+const getHlsAssets = async () => {
+  return await NativeModules.AssetPersistenceManager.getHLSAssetsForJS()
+}
+
+const hlsAssetListeners = [];
+
+const addHlsAssetsListener = (listener) => {
+  hlsAssetListeners.push(listener);
+  return () => {
+    hlsAssetListeners.splice(hlsAssetListeners.indexOf(listener), 1);
+  }
+}
+
+const eventEmitter = new NativeEventEmitter(NativeModules.AssetPersistenceEventEmitter);
+
+eventEmitter.addListener("hlsDownloads", (event) => {
+  hlsAssetListeners.forEach((listener) => {
+    listener(event);
+  });
+});
+
+
+export {
+  TextTrackType,
+  FilterType,
+  DRMType,
+  downloadHlsAsset,
+  cancelHlsAssetDownload,
+  deleteHlsAsset,
+  getHlsAssets,
+  addHlsAssetsListener
+};
+
 
 export default class Video extends Component {
 
@@ -75,7 +119,7 @@ export default class Video extends Component {
     this.setNativeProps({ fullscreen: false });
   };
 
-  save = async (options?) => {
+  save = async (options) => {
     return await NativeModules.VideoManager.save(options, findNodeHandle(this._root));
   }
 
