@@ -16,6 +16,8 @@ public class AssetPersistenceManager: NSObject {
 
     /// The AVAssetDownloadURLSession to use for managing AVAssetDownloadTasks.
     fileprivate var assetDownloadURLSession: AVAssetDownloadURLSession!
+    
+    fileprivate var queuedDownloads: [HLSAsset] = []
 
     /// Internal map of AVAggregateAssetDownloadTask to its corresponding Asset.
     fileprivate var activeDownloadsMap = [AVAggregateAssetDownloadTask: HLSAsset]()
@@ -148,6 +150,11 @@ public class AssetPersistenceManager: NSObject {
             }
         }
         
+        // Grab queued assets
+        for asset in self.queuedDownloads {
+            assets.append(asset)
+        }
+        
         // Grab pending assets
         for (_, asset) in self.activeDownloadsMap {
             assets.append(asset)
@@ -180,17 +187,25 @@ public class AssetPersistenceManager: NSObject {
     // MARK: Download stream
     @objc
     func downloadStream(_ name: String, hlsURL: String) {
+        // CHeck if this asset is already queued for download
+        let queuedAsset = queuedAssetForStream(withURL: hlsURL, name: name)
+        if (queuedAsset != nil) {
+            return
+        }
+        
         // Check if this asset is already being downloaded
         let assetInProgress = assetForStream(withURL: hlsURL, name: name)
         if (
             assetInProgress != nil
         ) {
-            cancelDownload(name, hlsURL: hlsURL)
+            //cancelDownload(name, hlsURL: hlsURL)
+            return
         }
         
         // Check if this asset was already downloaded
         if (localAssetForStream(withURL: hlsURL, name: name) != nil) {
-            deleteAsset(name, hlsURL: hlsURL)
+            // deleteAsset(name, hlsURL: hlsURL)
+            return
         }
         
         // create new asset
@@ -199,8 +214,12 @@ public class AssetPersistenceManager: NSObject {
             name: name,
             hlsURL: hlsURL,
             urlAsset: urlAsset,
-            status: HLSAsset.DownloadState.PENDING
+            status: HLSAsset.DownloadState.IDLE
         )
+        
+        queuedDownloads.append(asset)
+        
+        sendHLSAssetsToJS()
 
         // Get the default media selections for the asset's media selection groups.
         let preferredMediaSelection = asset.urlAsset.preferredMediaSelection
@@ -222,12 +241,15 @@ public class AssetPersistenceManager: NSObject {
 
         // To better track the AVAssetDownloadTask, set the taskDescription to something unique.
         task.taskDescription = asset.streamIdString()
+        
+        queuedDownloads = queuedDownloads.filter {$0 != asset}
+        
+        asset.status = HLSAsset.DownloadState.PENDING
 
         activeDownloadsMap[task] = asset
-
-        sendHLSAssetsToJS()
-
+        
         task.resume()
+
     }
 
     // MARK: Get asset
@@ -236,6 +258,17 @@ public class AssetPersistenceManager: NSObject {
         var asset: HLSAsset?
 
         for (_, assetValue) in activeDownloadsMap where hlsURL == assetValue.hlsURL && name == assetValue.name {
+            asset = assetValue
+            break
+        }
+
+        return asset
+    }
+    
+    func queuedAssetForStream(withURL hlsURL: String, name: String) -> HLSAsset? {
+        var asset: HLSAsset?
+
+        for assetValue in queuedDownloads where hlsURL == assetValue.hlsURL && name == assetValue.name {
             asset = assetValue
             break
         }
@@ -300,8 +333,6 @@ public class AssetPersistenceManager: NSObject {
         }
         
         let bookmark = assetData!["bookmark"] as! Data
-        print("EAT SHIT")
-        print(bookmark)
         var bookmarkDataIsStale = false
         do {
             let url = try URL(resolvingBookmarkData: bookmark,
@@ -513,6 +544,10 @@ extension AssetPersistenceManager: AVAssetDownloadDelegate {
         asset.progress = percentComplete
         
         sendHLSAssetsToJS()
+    }
+    
+    public func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
+        print(error)
     }
 }
 
