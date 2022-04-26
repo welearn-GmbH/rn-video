@@ -6,7 +6,7 @@ A simple class that holds information about an Asset.
 import AVFoundation
 
 public class HLSAsset {
-    
+    static let stringSeparator = "***ayylmao***"
     /// The AVURLAsset corresponding to this Asset.
     var urlAsset: AVURLAsset
     
@@ -21,6 +21,7 @@ public class HLSAsset {
     
     /// Asset download status
     var status: HLSAsset.DownloadState
+
     
     init(
          name: String,
@@ -38,15 +39,26 @@ public class HLSAsset {
         }
     }
     
-    public func formattedData() -> NSMutableDictionary {
+    public func formattedDataJS() -> NSMutableDictionary {
         let data: NSMutableDictionary = [:]
        
         data["name"] = name
-        data["hlsURL"] = hlsURL
+        data["hlsUrl"] = hlsURL
         data["progress"] = progress
         data["status"] = status.rawValue
         
         return data
+    }
+
+    public func streamIdString() -> String {
+        return name + HLSAsset.stringSeparator + hlsURL
+    }
+
+    public static func parseStreamIdString(streamId: String) -> (name: String, hlsURL: String) {
+        let arr = streamId.components(separatedBy: HLSAsset.stringSeparator)
+        let name = arr[0]
+        let hlsURL = arr[1]
+        return (name, hlsURL)
     }
 }
 

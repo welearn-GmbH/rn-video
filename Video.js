@@ -17,12 +17,12 @@ const downloadHlsAsset = async (name, hlsUrl) => {
   return await NativeModules.AssetPersistenceManager.downloadStream(name, hlsUrl)
 }
 
-const cancelHlsAssetDownload = async (hlsUrl) => {
-  return await NativeModules.AssetPersistenceManager.cancelDownload(hlsUrl)
+const cancelHlsAssetDownload = async (name, hlsUrl) => {
+  return await NativeModules.AssetPersistenceManager.cancelDownload(name, hlsUrl)
 }
 
-const deleteHlsAsset = async (hlsUrl) => {
-  return await NativeModules.AssetPersistenceManager.deleteAsset(hlsUrl)
+const deleteHlsAsset = async (name, hlsUrl) => {
+  return await NativeModules.AssetPersistenceManager.deleteAsset(name, hlsUrl)
 }
 
 const getHlsAssets = async () => {
