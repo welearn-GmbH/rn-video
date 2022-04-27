@@ -275,7 +275,7 @@ public class AssetPersistenceManager: NSObject {
 
         return asset
     }
-    
+        
     /// Returns an Asset pointing to a file on disk if it exists.
     func localAssetForStream(withURL hlsURL: String, name: String, bookmark: Data? = nil) -> HLSAsset? {
         if let providedBookmark = bookmark {
@@ -357,6 +357,56 @@ public class AssetPersistenceManager: NSObject {
             return nil
         }
        
+    }
+
+        
+    @objc public static func urlAssetForStream(withURL hlsURL: String) -> AVURLAsset? {
+        // Returns first matching urlAsset by hlsURL without checking the name. 
+        // For use by RCTVideo.m. Video player doesn't know the name of the video, and the only 
+        // reason we use the name in other cases is to work around the stage env having the same
+        // playlist url for every video. As such, it must not affect production, and even
+        // on stage no one will notice the difference, since the underlying video asset is the 
+        // same one anyway. 
+        
+        let userDefaults = UserDefaults.standard
+
+        guard let assetsData = userDefaults.value(
+            forKey: AssetPersistenceManager.downloadedHlsDataKey
+        ) as? [[String: Any]] else { return nil }
+        
+        var assetData: [String: Any]?
+
+        for assetDataItem in assetsData {
+            let assetUrl = assetDataItem["hlsUrl"] as! String
+
+            if (
+                assetUrl.compare(hlsURL) == .orderedSame
+            ) {
+                assetData = assetDataItem
+                break
+            }
+        }
+
+        if (assetData == nil) {
+            return nil
+        }
+        
+        let bookmark = assetData!["bookmark"] as! Data
+        var bookmarkDataIsStale = false
+        do {
+            let url = try URL(resolvingBookmarkData: bookmark,
+                                    bookmarkDataIsStale: &bookmarkDataIsStale)
+
+            if bookmarkDataIsStale {
+                fatalError("Bookmark data is stale!")
+            }
+            
+            let urlAsset = AVURLAsset(url: url)
+          
+            return urlAsset
+        } catch {
+            return nil
+        }
     }
 
     /// Returns the current download state for a given Asset.

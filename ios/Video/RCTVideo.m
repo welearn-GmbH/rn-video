@@ -494,63 +494,88 @@ static int const RCTVideoUnset = -1;
   handler([AVPlayerItem playerItemWithAsset:mixComposition]);
 }
 
+// MARK: Player item for source
+
 - (void)playerItemForSource:(NSDictionary *)source withCallback:(void(^)(AVPlayerItem *))handler
 {
-  bool isNetwork = [RCTConvert BOOL:[source objectForKey:@"isNetwork"]];
-  bool isAsset = [RCTConvert BOOL:[source objectForKey:@"isAsset"]];
-  bool shouldCache = [RCTConvert BOOL:[source objectForKey:@"shouldCache"]];
-  NSString *uri = [source objectForKey:@"uri"];
-  NSString *type = [source objectForKey:@"type"];
-  AVURLAsset *asset;
-  if (!uri || [uri isEqualToString:@""]) {
-    DebugLog(@"Could not find video URL in source '%@'", source);
-    return;
-  }
-  
-  NSURL *url = isNetwork || isAsset
-    ? [NSURL URLWithString:uri]
-    : [[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:uri ofType:type]];
-  NSMutableDictionary *assetOptions = [[NSMutableDictionary alloc] init];
-  
-  if (isNetwork) {
-    NSDictionary *headers = [source objectForKey:@"requestHeaders"];
-    if ([headers count] > 0) {
-      [assetOptions setObject:headers forKey:@"AVURLAssetHTTPHeaderFieldsKey"];
-    }
-    NSArray *cookies = [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies];
-    [assetOptions setObject:cookies forKey:AVURLAssetHTTPCookiesKey];
+    bool isNetwork = [RCTConvert BOOL:[source objectForKey:@"isNetwork"]];
+    bool isAsset = [RCTConvert BOOL:[source objectForKey:@"isAsset"]];
+    bool shouldCache = [RCTConvert BOOL:[source objectForKey:@"shouldCache"]];
     
+    NSString *uri = [source objectForKey:@"uri"];
+    NSString *type = [source objectForKey:@"type"];
+    
+    if (!uri || [uri isEqualToString:@""]) {
+        DebugLog(@"Could not find video URL in source '%@'", source);
+        return;
+    }
+    
+    // Try to load local asset first
+    AVURLAsset *localAsset = [AssetPersistenceManager
+                              urlAssetForStreamWithURL:uri
+    ];
+    
+    
+    if (localAsset != nil) {
+        NSMutableDictionary *assetOptions = [[NSMutableDictionary alloc] init];
+        
+        [self playerItemPrepareText:localAsset assetOptions:assetOptions withCallback:handler];
+        return;
+    }
+    
+    AVURLAsset *asset;
+    
+    NSURL *url = isNetwork || isAsset
+        ? [NSURL URLWithString:uri]
+        : [[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:uri ofType:type]];
+    
+    NSMutableDictionary *assetOptions = [[NSMutableDictionary alloc] init];
+    
+    if (isNetwork) {
+        
+        NSDictionary *headers = [source objectForKey:@"requestHeaders"];
+        if ([headers count] > 0) {
+            [assetOptions setObject:headers forKey:@"AVURLAssetHTTPHeaderFieldsKey"];
+        }
+        
+        NSArray *cookies = [[NSHTTPCookieStorage sharedHTTPCookieStorage] cookies];
+      
+        [assetOptions setObject:cookies forKey:AVURLAssetHTTPCookiesKey];
+        
 #if __has_include(<react-native-video/RCTVideoCache.h>)
-    if (shouldCache && (!_textTracks || !_textTracks.count)) {
-      /* The DVURLAsset created by cache doesn't have a tracksWithMediaType property, so trying
-       * to bring in the text track code will crash. I suspect this is because the asset hasn't fully loaded.
-       * Until this is fixed, we need to bypass caching when text tracks are specified.
-       */
-      DebugLog(@"Caching is not supported for uri '%@' because text tracks are not compatible with the cache. Checkout https://github.com/react-native-community/react-native-video/blob/master/docs/caching.md", uri);
-      [self playerItemForSourceUsingCache:uri assetOptions:assetOptions withCallback:handler];
-      return;
-    }
+        if (shouldCache && (!_textTracks || !_textTracks.count)) {
+            /* The DVURLAsset created by cache doesn't have a tracksWithMediaType property, so trying
+             * to bring in the text track code will crash. I suspect this is because the asset hasn't fully loaded.
+             * Until this is fixed, we need to bypass caching when text tracks are specified.
+             */
+            DebugLog(@"Caching is not supported for uri '%@' because text tracks are not compatible with the cache. Checkout https://github.com/react-native-community/react-native-video/blob/master/docs/caching.md", uri);
+            [self playerItemForSourceUsingCache:uri assetOptions:assetOptions withCallback:handler];
+            return;
+        }
 #endif
+        
+        asset = [AVURLAsset URLAssetWithURL:url options:assetOptions];
+    } else if (isAsset) {
+        asset = [AVURLAsset URLAssetWithURL:url options:nil];
+    } else {
+        asset = [AVURLAsset URLAssetWithURL:[[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:uri ofType:type]] options:nil];
+    }
     
-    asset = [AVURLAsset URLAssetWithURL:url options:assetOptions];
-  } else if (isAsset) {
-    asset = [AVURLAsset URLAssetWithURL:url options:nil];
-  } else {
-    asset = [AVURLAsset URLAssetWithURL:[[NSURL alloc] initFileURLWithPath:[[NSBundle mainBundle] pathForResource:uri ofType:type]] options:nil];
-  }
-  // Reset _loadingRequest
-  if (_loadingRequest != nil) {
-    [_loadingRequest finishLoading];
-  }
-  _requestingCertificate = NO;
-  _requestingCertificateErrored = NO;
-  // End Reset _loadingRequest
-  if (self->_drm != nil) {
-    dispatch_queue_t queue = dispatch_queue_create("assetQueue", nil);
-    [asset.resourceLoader setDelegate:self queue:queue];
-  }
-  
-  [self playerItemPrepareText:asset assetOptions:assetOptions withCallback:handler];
+    // Reset _loadingRequest
+    if (_loadingRequest != nil) {
+        [_loadingRequest finishLoading];
+    }
+    
+    _requestingCertificate = NO;
+    _requestingCertificateErrored = NO;
+    
+    // End Reset _loadingRequest
+    if (self->_drm != nil) {
+        dispatch_queue_t queue = dispatch_queue_create("assetQueue", nil);
+        [asset.resourceLoader setDelegate:self queue:queue];
+    }
+
+    [self playerItemPrepareText:asset assetOptions:assetOptions withCallback:handler];
 }
 
 #if __has_include(<react-native-video/RCTVideoCache.h>)
