@@ -237,7 +237,7 @@ public class AssetPersistenceManager: NSObject {
                                                                assetTitle: asset.name,
                                                                assetArtworkData: nil,
                                                                options:
-                [AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: 265_000]) else { return }
+                [AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: 10_000_000]) else { return }
 
         // To better track the AVAssetDownloadTask, set the taskDescription to something unique.
         task.taskDescription = asset.streamIdString()
