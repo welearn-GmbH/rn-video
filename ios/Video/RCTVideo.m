@@ -2043,7 +2043,7 @@ didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
 }
 
 - (void)pictureInPictureControllerWillStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-  
+  [self setPaused:_paused];
 }
 
 - (void)pictureInPictureControllerWillStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
