@@ -13,16 +13,16 @@ const styles = StyleSheet.create({
   },
 });
 
-const downloadHlsAsset = async (name, hlsUrl) => {
-  return await NativeModules.AssetPersistenceManager.downloadStream(name, hlsUrl)
+const downloadHlsAsset = async (id, hlsUrl) => {
+  return await NativeModules.AssetPersistenceManager.downloadStream(id, hlsUrl)
 }
 
-const cancelHlsAssetDownload = async (name, hlsUrl) => {
-  return await NativeModules.AssetPersistenceManager.cancelDownload(name, hlsUrl)
+const cancelHlsAssetDownload = async (id) => {
+  return await NativeModules.AssetPersistenceManager.cancelDownload(id)
 }
 
-const deleteHlsAsset = async (name, hlsUrl) => {
-  return await NativeModules.AssetPersistenceManager.deleteAsset(name, hlsUrl)
+const deleteHlsAsset = async (id) => {
+  return await NativeModules.AssetPersistenceManager.deleteAsset(id)
 }
 
 const getHlsAssets = async () => {

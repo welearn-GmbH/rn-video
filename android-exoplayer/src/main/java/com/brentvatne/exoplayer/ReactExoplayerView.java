@@ -21,6 +21,7 @@ import android.view.accessibility.CaptioningManager;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 
+import com.brentvatne.exoplayer.persistencemanager.AssetPersistenceManager;
 import com.brentvatne.react.R;
 import com.brentvatne.receiver.AudioBecomingNoisyReceiver;
 import com.brentvatne.receiver.BecomingNoisyListener;
@@ -570,11 +571,11 @@ class ReactExoplayerView extends FrameLayout implements
                 ).createMediaSource(MediaItem.fromUri(uri));
             case C.TYPE_HLS:
                 return new HlsMediaSource.Factory(
-                        mediaDataSourceFactory
+                        AssetPersistenceManager.getDataSourceFactory()
                 )
                  .setLoadErrorHandlingPolicy(
                         config.buildLoadErrorHandlingPolicy(minLoadRetryCount)
-                ).createMediaSource(MediaItem.fromUri(uri));
+                ).createMediaSource(AssetPersistenceManager.mediaItemForUri(uri));
             case C.TYPE_OTHER:
                 return new ProgressiveMediaSource.Factory(
                         mediaDataSourceFactory

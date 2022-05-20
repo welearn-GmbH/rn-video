@@ -11,7 +11,7 @@ public class HLSAsset {
     var urlAsset: AVURLAsset
     
     /// Media asset name (for notifications)
-    let name: String
+    let id: String
     
     /// HLS stream m3u8 url
     let hlsURL: String
@@ -24,13 +24,13 @@ public class HLSAsset {
 
     
     init(
-         name: String,
+         id: String,
          hlsURL: String,
          urlAsset: AVURLAsset,
          status: HLSAsset.DownloadState = HLSAsset.DownloadState.IDLE
     ) {
         self.urlAsset = urlAsset
-        self.name = name
+        self.id = id
         self.hlsURL = hlsURL
         self.status = status
         
@@ -42,7 +42,7 @@ public class HLSAsset {
     public func formattedDataJS() -> NSMutableDictionary {
         let data: NSMutableDictionary = [:]
        
-        data["name"] = name
+        data["id"] = id
         data["hlsUrl"] = hlsURL
         data["progress"] = progress
         data["status"] = status.rawValue
@@ -50,22 +50,22 @@ public class HLSAsset {
         return data
     }
 
-    public func streamIdString() -> String {
-        return name + HLSAsset.stringSeparator + hlsURL
+    public func encodeAssetDataToString() -> String {
+        return id + HLSAsset.stringSeparator + hlsURL
     }
 
-    public static func parseStreamIdString(streamId: String) -> (name: String, hlsURL: String) {
-        let arr = streamId.components(separatedBy: HLSAsset.stringSeparator)
-        let name = arr[0]
+    public static func decodeAssetDataFromString(_ dataString: String) -> (id: String, hlsURL: String) {
+        let arr = dataString.components(separatedBy: HLSAsset.stringSeparator)
+        let id = arr[0]
         let hlsURL = arr[1]
-        return (name, hlsURL)
+        return (id, hlsURL)
     }
 }
 
 /// Extends `Asset` to conform to the `Equatable` protocol.
 extension HLSAsset: Equatable {
     public static func ==(lhs: HLSAsset, rhs: HLSAsset) -> Bool {
-        return (lhs.name == rhs.name) && (lhs.hlsURL == rhs.hlsURL) && (lhs.urlAsset == rhs.urlAsset)
+        return (lhs.id == rhs.id) 
     }
 }
 
@@ -86,37 +86,5 @@ extension HLSAsset {
         
         /// Download has failed
         case FAILED
-    }
-}
-
-/**
- Extends `Asset` to define a number of values to use as keys in dictionary lookups.
- */
-extension HLSAsset {
-    struct Keys {
-        /**
-         Key for the Asset name, used for `AssetDownloadProgressNotification` and
-         `AssetDownloadStateChangedNotification` Notifications as well as
-         AssetListManager.
-         */
-        static let name = "AssetNameKey"
-
-        /**
-         Key for the Asset download percentage, used for
-         `AssetDownloadProgressNotification` Notification.
-         */
-        static let percentDownloaded = "AssetPercentDownloadedKey"
-
-        /**
-         Key for the Asset download state, used for
-         `AssetDownloadStateChangedNotification` Notification.
-         */
-        static let downloadState = "AssetDownloadStateKey"
-
-        /**
-         Key for the Asset download AVMediaSelection display Name, used for
-         `AssetDownloadStateChangedNotification` Notification.
-         */
-        static let downloadSelectionDisplayName = "AssetDownloadSelectionDisplayNameKey"
     }
 }

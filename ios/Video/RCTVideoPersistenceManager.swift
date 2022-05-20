@@ -17,13 +17,13 @@ public class AssetPersistenceManager: NSObject {
     /// The AVAssetDownloadURLSession to use for managing AVAssetDownloadTasks.
     fileprivate var assetDownloadURLSession: AVAssetDownloadURLSession!
     
-    fileprivate var queuedDownloads: [HLSAsset] = []
+    fileprivate var queuedAssets: [HLSAsset] = []
 
     /// Internal map of AVAggregateAssetDownloadTask to its corresponding Asset.
-    fileprivate var activeDownloadsMap = [AVAggregateAssetDownloadTask: HLSAsset]()
+    fileprivate var pendingAssetsTaskMap = [AVAggregateAssetDownloadTask: HLSAsset]()
     
     /// Internal map of AVAggregateAssetDownloadTask to download URL.
-    fileprivate var willDownloadToUrlMap = [AVAggregateAssetDownloadTask: URL]()
+    fileprivate var downloadURLTaskMap = [AVAggregateAssetDownloadTask: URL]()
 
     // MARK: Intialization
 
@@ -52,20 +52,20 @@ public class AssetPersistenceManager: NSObject {
         assetDownloadURLSession.getAllTasks { tasksArray in
             // For each task, restore the state in the app by recreating Asset structs and reusing existing AVURLAsset objects.
             for task in tasksArray {
-                guard let assetDownloadTask = task as? AVAggregateAssetDownloadTask, let streamIdString = task.taskDescription else { break }
+                guard let assetDownloadTask = task as? AVAggregateAssetDownloadTask, let encodedAssetData = task.taskDescription else { break }
                 
-                let metadata = HLSAsset.parseStreamIdString(streamId: streamIdString)
+                let assetData = HLSAsset.decodeAssetDataFromString(encodedAssetData)
                 
                 let urlAsset = assetDownloadTask.urlAsset
             
                 let asset = HLSAsset(
-                    name: metadata.name,
-                    hlsURL: metadata.hlsURL,
+                    id: assetData.id,
+                    hlsURL: assetData.hlsURL,
                     urlAsset: urlAsset,
                     status: HLSAsset.DownloadState.PENDING
                 )
                  
-                self.activeDownloadsMap[assetDownloadTask] = asset
+                self.pendingAssetsTaskMap[assetDownloadTask] = asset
             }
         }
     }
@@ -91,7 +91,7 @@ public class AssetPersistenceManager: NSObject {
         
         newData.append(
             [
-                "name": asset.name,
+                "id": asset.id,
                 "hlsUrl": asset.hlsURL,
                 "bookmark": bookmark as Data
             ]
@@ -101,7 +101,7 @@ public class AssetPersistenceManager: NSObject {
 
     }
     
-    func forgetDownloadedAssetData(withURL hlsURL: String, name:String) {
+    func forgetDownloadedAssetData(_ id: String) {
         let userDefaults = UserDefaults.standard
 
         guard let currentData = userDefaults.value(
@@ -113,10 +113,10 @@ public class AssetPersistenceManager: NSObject {
         )
         
         let filteredData = currentData.filter {assetData in
-            let assetURL = assetData["hlsUrl"] as! String
-            let assetName = assetData["name"] as! String
-            return hlsURL.compare(assetURL) != .orderedSame &&
-                name.compare(assetName) != .orderedSame
+            if let assetId = assetData["id"] as? String {
+                return id.compare(assetId) != .orderedSame
+            }
+            return true
         }
         
         userDefaults.set(filteredData, forKey: AssetPersistenceManager.downloadedHlsDataKey)
@@ -130,33 +130,32 @@ public class AssetPersistenceManager: NSObject {
         let userDefaults = UserDefaults.standard
         
         let downloadedAssetsData = userDefaults.value(forKey: AssetPersistenceManager.downloadedHlsDataKey) 
-        as? [[String: Any]]
+            as? [[String: Any]]
         
         if (downloadedAssetsData != nil) {
             for assetData in downloadedAssetsData! {
-                let hlsURL = assetData["hlsUrl"] as! String
-                let name = assetData["name"] as! String
-                let bookmark = assetData["bookmark"] as! Data
                 
-                let asset = localAssetForStream(
-                    withURL: hlsURL,
-                    name: name,
-                    bookmark: bookmark
-                )
-                
-                if (asset != nil) {
-                    assets.append(asset!)
+                if
+                    let id = assetData["id"] as? String
+                {
+                    let asset = localAssetForStream(id)
+                    
+                    if (asset != nil) {
+                        assets.append(asset!)
+                    }
                 }
+                
+               
             }
         }
         
         // Grab queued assets
-        for asset in self.queuedDownloads {
+        for asset in self.queuedAssets {
             assets.append(asset)
         }
         
         // Grab pending assets
-        for (_, asset) in self.activeDownloadsMap {
+        for (_, asset) in self.pendingAssetsTaskMap {
             assets.append(asset)
         }
         
@@ -186,38 +185,36 @@ public class AssetPersistenceManager: NSObject {
     /// - Tag: DownloadStream
     // MARK: Download stream
     @objc
-    func downloadStream(_ name: String, hlsURL: String) {
-        // CHeck if this asset is already queued for download
-        let queuedAsset = queuedAssetForStream(withURL: hlsURL, name: name)
+    func downloadStream(_ id: String, hlsURL: String) {
+        // Check if this asset is already queued for download
+        let queuedAsset = queuedAssetForStream(id)
         if (queuedAsset != nil) {
             return
         }
         
         // Check if this asset is already being downloaded
-        let assetInProgress = assetForStream(withURL: hlsURL, name: name)
+        let assetInProgress = pendingAssetForStream(id)
         if (
             assetInProgress != nil
         ) {
-            //cancelDownload(name, hlsURL: hlsURL)
             return
         }
         
         // Check if this asset was already downloaded
-        if (localAssetForStream(withURL: hlsURL, name: name) != nil) {
-            // deleteAsset(name, hlsURL: hlsURL)
+        if (localAssetForStream(id) != nil) {
             return
         }
         
         // create new asset
         let urlAsset = AVURLAsset(url: URL(string: hlsURL)!)
         let asset = HLSAsset(
-            name: name,
+            id: id,
             hlsURL: hlsURL,
             urlAsset: urlAsset,
             status: HLSAsset.DownloadState.IDLE
         )
         
-        queuedDownloads.append(asset)
+        queuedAssets.append(asset)
         
         sendHLSAssetsToJS()
 
@@ -232,32 +229,37 @@ public class AssetPersistenceManager: NSObject {
          corresponding with one of the lower bitrate variants in the asset.
          */
         guard let task =
-            assetDownloadURLSession.aggregateAssetDownloadTask(with: asset.urlAsset,
-                                                               mediaSelections: [preferredMediaSelection],
-                                                               assetTitle: asset.name,
-                                                               assetArtworkData: nil,
-                                                               options:
-                [AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: 10_000_000]) else { return }
+            assetDownloadURLSession.aggregateAssetDownloadTask(
+                with: asset.urlAsset,
+                mediaSelections: [preferredMediaSelection],
+                assetTitle: id,
+                assetArtworkData: nil,
+                options: [
+                    AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: 10_000_000
+                ]
+            ) else { 
+                return    
+            }
 
         // To better track the AVAssetDownloadTask, set the taskDescription to something unique.
-        task.taskDescription = asset.streamIdString()
+        task.taskDescription = asset.encodeAssetDataToString()
         
-        queuedDownloads = queuedDownloads.filter {$0 != asset}
+        queuedAssets = queuedAssets.filter {$0 != asset}
         
         asset.status = HLSAsset.DownloadState.PENDING
 
-        activeDownloadsMap[task] = asset
+        pendingAssetsTaskMap[task] = asset
         
         task.resume()
 
     }
 
     // MARK: Get asset
-    /// Returns an Asset given a specific name if that Asset is associated with an active download.
-    func assetForStream(withURL hlsURL: String, name: String) -> HLSAsset? {
+    /// Get pending (downloading) asset
+    func pendingAssetForStream(_ id: String) -> HLSAsset? {
         var asset: HLSAsset?
 
-        for (_, assetValue) in activeDownloadsMap where hlsURL == assetValue.hlsURL && name == assetValue.name {
+        for (_, assetValue) in pendingAssetsTaskMap where id == assetValue.id {
             asset = assetValue
             break
         }
@@ -265,10 +267,11 @@ public class AssetPersistenceManager: NSObject {
         return asset
     }
     
-    func queuedAssetForStream(withURL hlsURL: String, name: String) -> HLSAsset? {
+    /// Get idle (queued) asset
+    func queuedAssetForStream(_ id: String) -> HLSAsset? {
         var asset: HLSAsset?
 
-        for assetValue in queuedDownloads where hlsURL == assetValue.hlsURL && name == assetValue.name {
+        for assetValue in queuedAssets where id == assetValue.id {
             asset = assetValue
             break
         }
@@ -277,36 +280,7 @@ public class AssetPersistenceManager: NSObject {
     }
         
     /// Returns an Asset pointing to a file on disk if it exists.
-    func localAssetForStream(withURL hlsURL: String, name: String, bookmark: Data? = nil) -> HLSAsset? {
-        if let providedBookmark = bookmark {
-            // Bookmark provided - try to load asset from file directly
-
-            var bookmarkDataIsStale = false
-            do {
-                let url = try URL(resolvingBookmarkData: providedBookmark,
-                                        bookmarkDataIsStale: &bookmarkDataIsStale)
-
-                if bookmarkDataIsStale {
-                    fatalError("Bookmark data is stale!")
-                }
-                
-                let urlAsset = AVURLAsset(url: url)
-                
-                let asset = HLSAsset(
-                    name: name,
-                    hlsURL: hlsURL,
-                    urlAsset: urlAsset,
-                    status: HLSAsset.DownloadState.FINISHED
-                )
-                
-                return asset
-            } catch {
-                return nil
-            }
-        }
-
-        // No bookmark - find asset data in user defaults and load from file
-
+    func localAssetForStream(_ id: String) -> HLSAsset? {
         let userDefaults = UserDefaults.standard
 
         guard let assetsData = userDefaults.value(
@@ -316,15 +290,13 @@ public class AssetPersistenceManager: NSObject {
         var assetData: [String: Any]?
 
         for assetDataItem in assetsData {
-            let assetUrl = assetDataItem["hlsUrl"] as! String
-            let assetName = assetDataItem["name"] as! String
-
-            if (
-                assetUrl.compare(hlsURL) == .orderedSame &&
-                assetName.compare(name) == .orderedSame
-            ) {
-                assetData = assetDataItem
-                break
+            if let assetId = assetDataItem["id"] as? String {
+                if (
+                    assetId.compare(id) == .orderedSame
+                ) {
+                    assetData = assetDataItem
+                    break
+                }
             }
         }
 
@@ -345,15 +317,15 @@ public class AssetPersistenceManager: NSObject {
             let urlAsset = AVURLAsset(url: url)
             
             let asset = HLSAsset(
-                name: name,
-                hlsURL: hlsURL,
+                id: id,
+                hlsURL: assetData!["hlsUrl"] as! String,
                 urlAsset: urlAsset,
                 status: HLSAsset.DownloadState.FINISHED
             )
             
             return asset
         } catch {
-            forgetDownloadedAssetData(withURL: hlsURL, name: name)
+            forgetDownloadedAssetData(id)
             return nil
         }
        
@@ -361,9 +333,9 @@ public class AssetPersistenceManager: NSObject {
 
         
     @objc public static func urlAssetForStream(withURL hlsURL: String) -> AVURLAsset? {
-        // Returns first matching urlAsset by hlsURL without checking the name. 
-        // For use by RCTVideo.m. Video player doesn't know the name of the video, and the only 
-        // reason we use the name in other cases is to work around the stage env having the same
+        // Returns first matching urlAsset by hlsURL. 
+        // For use by RCTVideo.m. Video player doesn't know the id of the video, and the only 
+        // reason we use the id in other cases is to work around the stage env having the same
         // playlist url for every video. As such, it must not affect production, and even
         // on stage no one will notice the difference, since the underlying video asset is the 
         // same one anyway. 
@@ -410,8 +382,8 @@ public class AssetPersistenceManager: NSObject {
     }
 
     /// Returns the current download state for a given Asset.
-    func checkAssetFileExists(_ hlsURL: String, name: String) -> Bool {
-        guard let hlsAsset = localAssetForStream(withURL: hlsURL, name: name) else { return false }
+    func checkAssetFileExists(_ id: String) -> Bool {
+        guard let hlsAsset = localAssetForStream(id) else { return false }
        
         // Check if there is a file URL stored for this asset.
         if FileManager.default.fileExists(atPath: hlsAsset.urlAsset.url.path) {
@@ -425,15 +397,18 @@ public class AssetPersistenceManager: NSObject {
     /// Deletes an Asset on disk if possible.
     /// - Tag: RemoveDownload
     @objc
-    func deleteAsset(_ name: String, hlsURL: String) {
+    func deleteAsset(_ id: String) {
         do {
-            forgetDownloadedAssetData(withURL: hlsURL, name: name)
+           
+            let hlsAsset = localAssetForStream(id)
+
+            forgetDownloadedAssetData(id)
             
             sendHLSAssetsToJS()
-            
-            guard let hlsAsset = localAssetForStream(withURL: hlsURL, name: name) else { return }
 
-            try FileManager.default.removeItem(at: hlsAsset.urlAsset.url)
+            if (hlsAsset != nil) {
+                try FileManager.default.removeItem(at: hlsAsset!.urlAsset.url)
+            }
         } catch {
             print("An error occured deleting the file: \(error)")
         }
@@ -442,18 +417,18 @@ public class AssetPersistenceManager: NSObject {
     /// Cancels an AVAssetDownloadTask given an Asset.
     /// - Tag: CancelDownload
     @objc
-    func cancelDownload(_ name: String, hlsURL: String) {
-        guard let asset = assetForStream(withURL: hlsURL, name: name) else { return }
+    func cancelDownload(_ id: String) {
+        guard let asset = pendingAssetForStream(id) else { return }
         var task: AVAggregateAssetDownloadTask?
 
-        for (taskKey, assetVal) in activeDownloadsMap where asset == assetVal {
+        for (taskKey, assetVal) in pendingAssetsTaskMap where asset == assetVal {
             task = taskKey
             break
         }
 
         if (task != nil) {
             task!.cancel()
-            activeDownloadsMap.removeValue(forKey: task!)
+            pendingAssetsTaskMap.removeValue(forKey: task!)
             sendHLSAssetsToJS()
         }
     }
@@ -504,9 +479,9 @@ extension AssetPersistenceManager: AVAssetDownloadDelegate {
          once the asset itself has finished downloading.
          */
         guard let task = task as? AVAggregateAssetDownloadTask,
-            let asset = activeDownloadsMap.removeValue(forKey: task) else { return }
+            let asset = pendingAssetsTaskMap.removeValue(forKey: task) else { return }
 
-        guard let downloadURL = willDownloadToUrlMap.removeValue(forKey: task) else { return }
+        guard let downloadURL = downloadURLTaskMap.removeValue(forKey: task) else { return }
 
         if let error = error as NSError? {
             asset.status = HLSAsset.DownloadState.FAILED
@@ -520,14 +495,13 @@ extension AssetPersistenceManager: AVAssetDownloadDelegate {
                     URL saved from AVAssetDownloadDelegate.urlSession(_:assetDownloadTask:didFinishDownloadingTo:).
                     */
                     guard let localFileLocation = localAssetForStream(
-                        withURL: asset.hlsURL,
-                        name:asset.name
+                       asset.id
                     )?.urlAsset.url else { return }
 
                     do {
                         try FileManager.default.removeItem(at: localFileLocation)
                     } catch {
-                        print("An error occured trying to delete the contents on disk for \(asset.name): \(error)")
+                        print("An error occured trying to delete the contents on disk for \(asset.id): \(error)")
                     }
 
                 case (NSURLErrorDomain, NSURLErrorUnknown):
@@ -558,7 +532,7 @@ extension AssetPersistenceManager: AVAssetDownloadDelegate {
          `URLSessionTaskDelegate.urlSession(_:task:didCompleteWithError:)`.
          */
 
-        willDownloadToUrlMap[aggregateAssetDownloadTask] = location
+        downloadURLTaskMap[aggregateAssetDownloadTask] = location
     }
 
     /// Method called when a child AVAssetDownloadTask completes.
@@ -569,9 +543,9 @@ extension AssetPersistenceManager: AVAssetDownloadDelegate {
          offline use. You can perform any additional processing with the object here.
          */
 
-        guard let asset = activeDownloadsMap[aggregateAssetDownloadTask] else { return }
+        guard let asset = pendingAssetsTaskMap[aggregateAssetDownloadTask] else { return }
 
-        aggregateAssetDownloadTask.taskDescription = asset.streamIdString()
+        aggregateAssetDownloadTask.taskDescription = asset.encodeAssetDataToString()
 
         aggregateAssetDownloadTask.resume()
     }
@@ -582,7 +556,7 @@ extension AssetPersistenceManager: AVAssetDownloadDelegate {
                     timeRangeExpectedToLoad: CMTimeRange, for mediaSelection: AVMediaSelection) {
 
         // This delegate callback should be used to provide download progress for your AVAssetDownloadTask.
-        guard let asset = activeDownloadsMap[aggregateAssetDownloadTask] else { return }
+        guard let asset = pendingAssetsTaskMap[aggregateAssetDownloadTask] else { return }
 
         var percentComplete = 0.0
         for value in loadedTimeRanges {
