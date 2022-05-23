@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 public final class AssetDownloadController {
     private static final HashMap<Integer, HLSAsset.HLSAssetStatus> statusMap = new HashMap(){{
@@ -72,7 +73,7 @@ public final class AssetDownloadController {
     private static File downloadDirectory;
     private static Cache downloadCache;
     private static DownloadManager downloadManager;
-    private static DownloadNotificationHelper downloadNotificationHelper;
+    private static AssetDownloadNotificationHelper downloadNotificationHelper;
 
     private static DownloadIndex downloadIndex;
     public static DefaultTrackSelector.Parameters trackSelectorParameters;
@@ -83,6 +84,9 @@ public final class AssetDownloadController {
     private static SharedPreferences sharedPreferences;
 
     private static final ArrayList<Runnable> listeners = new ArrayList<>();
+
+    public static int downloadsPerBatchCount = 0;
+    public static int downloadsPerBatchCountRemaining = 0;
 
     public static synchronized void init(Context appContext) {
         if (context != null) {
@@ -138,6 +142,7 @@ public final class AssetDownloadController {
     // Actions
 
     public static void downloadAsset(HLSAsset asset) {
+
         MediaItem mediaItem = asset.getMediaItemForDownload();
 
         DownloadHelper downloadHelper = DownloadHelper.forMediaItem(
@@ -180,6 +185,8 @@ public final class AssetDownloadController {
                 Log.d(TAG, "stream keys size:" + request.streamKeys.size());
                 asset.streamKeys = request.streamKeys;
                 saveAssetData(asset);
+                downloadsPerBatchCount++;
+                downloadsPerBatchCountRemaining++;
 
                 DownloadService.sendAddDownload(
                         context,
@@ -227,6 +234,14 @@ public final class AssetDownloadController {
     @Nullable
     public static HLSAsset findAssetByDownload(Download download) {
         return assets.get(download.request.id);
+    }
+
+    public static List<Download> getPendingDownloads() {
+        return downloads
+                .values()
+                .stream()
+                .filter(dl -> dl.state != Download.STATE_COMPLETED)
+                .collect(Collectors.toList());
     }
 
     // Data persistence
@@ -330,6 +345,9 @@ public final class AssetDownloadController {
             HLSAsset.HLSAssetStatus assetStatus = statusMap.get(download.state);
             if (assetStatus != null) {
                 asset.status = assetStatus;
+                if (assetStatus == HLSAsset.HLSAssetStatus.FINISHED) {
+                    downloadsPerBatchCountRemaining--;
+                }
             }
             asset.progress = download.getPercentDownloaded() / 100;
             saveAssetData(asset);
@@ -354,6 +372,7 @@ public final class AssetDownloadController {
         listeners.add(listener);
     }
 
+
     // Getters for DownloadService
 
     public static synchronized DownloadManager getDownloadManager(Context context) {
@@ -363,11 +382,11 @@ public final class AssetDownloadController {
         return downloadManager;
     }
 
-    public static synchronized DownloadNotificationHelper getDownloadNotificationHelper(
+    public static synchronized AssetDownloadNotificationHelper getDownloadNotificationHelper(
             Context context) {
         if (downloadNotificationHelper == null) {
             downloadNotificationHelper =
-                    new DownloadNotificationHelper(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID);
+                    new AssetDownloadNotificationHelper(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID);
         }
         return downloadNotificationHelper;
     }

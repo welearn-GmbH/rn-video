@@ -20,13 +20,14 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class AssetDownloadService extends DownloadService {
 
     private static final int JOB_ID = 1;
     private static final int FOREGROUND_NOTIFICATION_ID = 1;
     private static final String DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel";
-    private static ArrayList<Consumer<List<Download>>> listeners = new ArrayList<>();
+    private static final ArrayList<Consumer<List<Download>>> listeners = new ArrayList<>();
 
     public AssetDownloadService() {
         super(
@@ -46,11 +47,11 @@ public class AssetDownloadService extends DownloadService {
     protected DownloadManager getDownloadManager() {
         DownloadManager downloadManager =
                 AssetDownloadController.getDownloadManager(this);
-        DownloadNotificationHelper downloadNotificationHelper =
+        AssetDownloadNotificationHelper downloadNotificationHelper =
                 AssetDownloadController.getDownloadNotificationHelper(this);
         downloadManager.addListener(
                 new TerminalStateNotificationHelper(
-                        this, downloadNotificationHelper, FOREGROUND_NOTIFICATION_ID + 1
+                        this, downloadNotificationHelper, FOREGROUND_NOTIFICATION_ID
                 )
         );
         return downloadManager;
@@ -78,7 +79,7 @@ public class AssetDownloadService extends DownloadService {
     }
 
     /**
-     * Creates and displays notifications for downloads when they complete or fail.
+     * Creates and displays notifications for downloads when they complete.
      *
      * <p>This helper will outlive the lifespan of a single instance of {@link AssetDownloadService}.
      * It is static to avoid leaking the first {@link AssetDownloadService} instance.
@@ -86,39 +87,53 @@ public class AssetDownloadService extends DownloadService {
     private static final class TerminalStateNotificationHelper implements DownloadManager.Listener {
 
         private final Context context;
-        private final DownloadNotificationHelper notificationHelper;
+        private final AssetDownloadNotificationHelper notificationHelper;
 
-        private int nextNotificationId;
+        private int notificationId;
 
         public TerminalStateNotificationHelper(
-                Context context, DownloadNotificationHelper notificationHelper, int firstNotificationId) {
+                Context context, AssetDownloadNotificationHelper notificationHelper, int foregroundNotificationId) {
             this.context = context.getApplicationContext();
             this.notificationHelper = notificationHelper;
-            nextNotificationId = firstNotificationId;
+            this.notificationId = foregroundNotificationId + 1;
         }
 
         @Override
         public void onDownloadChanged(
                 DownloadManager downloadManager, Download download, @Nullable Exception finalException) {
             Notification notification;
-            if (download.state == Download.STATE_COMPLETED) {
+
+            if (download.state != Download.STATE_COMPLETED) {
+                return;
+            }
+
+            Boolean allCompleted = true;
+
+            List<Download> otherDownloads = AssetDownloadController.downloads
+                    .values()
+                    .stream()
+                    .filter(dl -> dl.request.id != download.request.id)
+                    .collect(Collectors.toList());
+
+            for (Download dl: otherDownloads
+                 ) {
+                if (dl.state != Download.STATE_COMPLETED) {
+                    allCompleted = false;
+                }
+            }
+
+            if (allCompleted) {
                 notification =
                         notificationHelper.buildDownloadCompletedNotification(
                                 context,
                                 R.drawable.ic_download_done,
                                 null,
-                                Util.fromUtf8Bytes(download.request.data));
-            } else if (download.state == Download.STATE_FAILED) {
-                notification =
-                        notificationHelper.buildDownloadFailedNotification(
-                                context,
-                                R.drawable.ic_download_done,
-                                null,
-                                Util.fromUtf8Bytes(download.request.data));
-            } else {
-                return;
+                                null
+                        );
+                NotificationUtil.setNotification(context, notificationId, notification);
+                AssetDownloadController.downloadsPerBatchCount = 0;
+                AssetDownloadController.downloadsPerBatchCountRemaining = 0;
             }
-            NotificationUtil.setNotification(context, nextNotificationId++, notification);
         }
     }
 }
