@@ -1,18 +1,11 @@
 package com.brentvatne.exoplayer.persistencemanager;
 
-import android.net.Uri;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.offline.Download;
-import com.google.android.exoplayer2.offline.DownloadRequest;
 import com.google.android.exoplayer2.offline.StreamKey;
-import com.google.android.exoplayer2.source.MediaPeriod;
-import com.google.android.exoplayer2.source.hls.playlist.HlsMultivariantPlaylist;
 import com.google.android.exoplayer2.util.MimeTypes;
 
-import java.util.Collections;
 import java.util.List;
 
 public class HLSAsset {
