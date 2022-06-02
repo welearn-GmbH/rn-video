@@ -13,8 +13,8 @@ const styles = StyleSheet.create({
   },
 });
 
-const downloadHlsAsset = async (id, hlsUrl) => {
-  return await NativeModules.AssetPersistenceManager.downloadStream(id, hlsUrl)
+const downloadHlsAsset = async (id, hlsUrl, bitrate) => {
+  return await NativeModules.AssetPersistenceManager.downloadStream(id, hlsUrl, bitrate)
 }
 
 const cancelHlsAssetDownload = async (id) => {

@@ -180,12 +180,42 @@ public class AssetPersistenceManager: NSObject {
         let assetsData = collectHLSAssetsData()
         AssetPersistenceEventEmitter.shared?.sendCustomEvent(body: assetsData)
     }
+    
+    func getHLSFileSize(_ directoryPath: String) -> Double {
+        let properties: [URLResourceKey] = [.isRegularFileKey,
+                                            .totalFileAllocatedSizeKey,
+                                            /*.fileAllocatedSizeKey*/]
+
+        guard let enumerator = FileManager.default.enumerator(at: URL(fileURLWithPath: directoryPath),
+                 includingPropertiesForKeys: properties,
+                 options: .skipsHiddenFiles,
+                 errorHandler: nil) else {
+            return 0.0
+        }
+
+        let urls: [URL] = enumerator
+            .compactMap { $0 as? URL }
+            .filter { $0.absoluteString.contains(".frag") }
+
+        let regularFileResources: [URLResourceValues] = urls
+            .compactMap { try? $0.resourceValues(forKeys: Set(properties)) }
+            .filter { $0.isRegularFile == true }
+
+        let sizes: [Double] = regularFileResources
+            .compactMap { $0.totalFileAllocatedSize! /* ?? $0.fileAllocatedSize */ }
+            .compactMap { Double($0) }
+
+        
+        let size = sizes.reduce(0, +)
+ 
+        return size
+    }
 
     /// Triggers the initial AVAssetDownloadTask for a given Asset.
     /// - Tag: DownloadStream
     // MARK: Download stream
     @objc
-    func downloadStream(_ id: String, hlsURL: String) {
+    func downloadStream(_ id: String, hlsURL: String, bitrate: NSNumber) {
         // Check if this asset is already queued for download
         let queuedAsset = queuedAssetForStream(id)
         if (queuedAsset != nil) {
@@ -210,8 +240,7 @@ public class AssetPersistenceManager: NSObject {
         let asset = HLSAsset(
             id: id,
             hlsURL: hlsURL,
-            urlAsset: urlAsset,
-            status: HLSAsset.DownloadState.IDLE
+            urlAsset: urlAsset
         )
         
         queuedAssets.append(asset)
@@ -224,10 +253,7 @@ public class AssetPersistenceManager: NSObject {
         /*
          Creates and initializes an AVAggregateAssetDownloadTask to download multiple AVMediaSelections
          on an AVURLAsset.
-         
-         For the initial download, we ask the URLSession for an AVAssetDownloadTask with a minimum bitrate
-         corresponding with one of the lower bitrate variants in the asset.
-         */
+        */
         guard let task =
             assetDownloadURLSession.aggregateAssetDownloadTask(
                 with: asset.urlAsset,
@@ -235,7 +261,7 @@ public class AssetPersistenceManager: NSObject {
                 assetTitle: id,
                 assetArtworkData: nil,
                 options: [
-                    AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: 10_000_000
+                    AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: bitrate
                 ]
             ) else { 
                 return    
@@ -243,6 +269,8 @@ public class AssetPersistenceManager: NSObject {
 
         // To better track the AVAssetDownloadTask, set the taskDescription to something unique.
         task.taskDescription = asset.encodeAssetDataToString()
+        
+        print(task.countOfBytesExpectedToReceive);
         
         queuedAssets = queuedAssets.filter {$0 != asset}
         
@@ -316,11 +344,14 @@ public class AssetPersistenceManager: NSObject {
             
             let urlAsset = AVURLAsset(url: url)
             
+            let size = getHLSFileSize(urlAsset.url.path)
+            
             let asset = HLSAsset(
                 id: id,
                 hlsURL: assetData!["hlsUrl"] as! String,
                 urlAsset: urlAsset,
-                status: HLSAsset.DownloadState.FINISHED
+                status: HLSAsset.DownloadState.FINISHED,
+                size: size
             )
             
             return asset
@@ -483,9 +514,11 @@ extension AssetPersistenceManager: AVAssetDownloadDelegate {
 
         guard let downloadURL = downloadURLTaskMap.removeValue(forKey: task) else { return }
 
+        
+        
         if let error = error as NSError? {
             asset.status = HLSAsset.DownloadState.FAILED
-            
+
             sendHLSAssetsToJS()
             
             switch (error.domain, error.code) {

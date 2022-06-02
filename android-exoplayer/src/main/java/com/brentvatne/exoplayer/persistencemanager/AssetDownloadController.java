@@ -112,14 +112,6 @@ public final class AssetDownloadController {
 
         downloadIndex = downloadManager.getDownloadIndex();
 
-        trackSelectorParameters = DownloadHelper
-                .getDefaultTrackSelectorParameters(context)
-                .buildUpon()
-                .setForceHighestSupportedBitrate(false)
-                .setForceLowestBitrate(true)
-                .setExceedVideoConstraintsIfNecessary(true)
-                .build();
-
         AssetDownloadService.addProgressListener(AssetDownloadController::onProgressChanged);
 
         loadDownloads();
@@ -127,7 +119,16 @@ public final class AssetDownloadController {
 
     // Actions
 
-    public static void downloadAsset(HLSAsset asset) {
+    public static void downloadAsset(HLSAsset asset, int bitrate) {
+
+        trackSelectorParameters = DownloadHelper
+                .getDefaultTrackSelectorParameters(context)
+                .buildUpon()
+                .setForceHighestSupportedBitrate(false)
+                .setMinVideoBitrate(bitrate - bitrate/3)
+                .setMaxVideoBitrate(bitrate + bitrate/3)
+                .setExceedVideoConstraintsIfNecessary(true)
+                .build();
 
         MediaItem mediaItem = asset.getMediaItemForDownload();
 
@@ -307,6 +308,7 @@ public final class AssetDownloadController {
                 return;
             }
             Log.d(TAG, "downloaded:" + download.getBytesDownloaded() / 1000 / 1000 + " MB");
+            asset.size = download.getBytesDownloaded();
             asset.progress = download.getPercentDownloaded() / 100;
             saveAssetData(asset);
             downloads.put(download.request.id, download);
@@ -335,6 +337,7 @@ public final class AssetDownloadController {
                     downloadsPerBatchCountRemaining--;
                 }
             }
+            asset.size = download.getBytesDownloaded();
             asset.progress = download.getPercentDownloaded() / 100;
             saveAssetData(asset);
             downloads.put(download.request.id, download);

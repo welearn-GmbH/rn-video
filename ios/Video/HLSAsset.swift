@@ -21,18 +21,23 @@ public class HLSAsset {
     
     /// Asset download status
     var status: HLSAsset.DownloadState
+    
+    /// Asset size in bytes
+    var size: Double = 0
 
     
     init(
          id: String,
          hlsURL: String,
          urlAsset: AVURLAsset,
-         status: HLSAsset.DownloadState = HLSAsset.DownloadState.IDLE
+         status: HLSAsset.DownloadState = HLSAsset.DownloadState.IDLE,
+         size: Double = 0.0
     ) {
         self.urlAsset = urlAsset
         self.id = id
         self.hlsURL = hlsURL
         self.status = status
+        self.size = size
         
         if (status == HLSAsset.DownloadState.FINISHED) {
             self.progress = 1
@@ -46,6 +51,7 @@ public class HLSAsset {
         data["hlsUrl"] = hlsURL
         data["progress"] = progress
         data["status"] = status.rawValue
+        data["size"] = size
         
         return data
     }

@@ -48,13 +48,13 @@ public class AssetPersistenceManager extends ReactContextBaseJavaModule  {
     }
 
     @ReactMethod
-    public void downloadStream(String id, String hlsUrl) {
+    public void downloadStream(String id, String hlsUrl, int bitrate) {
         HLSAsset existingAsset = AssetDownloadController.findAssetById(id);
         if (existingAsset != null) {
             return;
         }
         HLSAsset asset = new HLSAsset(id, hlsUrl);
-        AssetDownloadController.downloadAsset(asset);
+        AssetDownloadController.downloadAsset(asset, bitrate);
     }
 
     @ReactMethod

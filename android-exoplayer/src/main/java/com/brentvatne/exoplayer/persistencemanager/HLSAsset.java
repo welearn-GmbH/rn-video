@@ -12,6 +12,7 @@ public class HLSAsset {
     String id;
     String hlsUrl;
     float progress = 0;
+    float size = 0;
     HLSAssetStatus status = HLSAssetStatus.IDLE;
     List<StreamKey> streamKeys;
 
@@ -41,10 +42,12 @@ public class HLSAsset {
 
     public WritableMap getDataForJS() {
         WritableMap map = Arguments.createMap();
+        
         map.putString("id",id);
         map.putString("hlsUrl",hlsUrl);
         map.putString("status",status.name());
         map.putDouble("progress",progress);
+        map.putDouble("size",size);
         return map;
     }
 
