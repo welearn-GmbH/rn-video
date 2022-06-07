@@ -33,13 +33,13 @@ public class AssetPersistenceManager: NSObject {
 
         // Create the configuration for the AVAssetDownloadURLSession.
         let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: "AAPL-Identifier")
+        
+        backgroundConfiguration.httpMaximumConnectionsPerHost = 3
 
         // Create the AVAssetDownloadURLSession using the configuration.
         assetDownloadURLSession =
             AVAssetDownloadURLSession(configuration: backgroundConfiguration,
                                       assetDownloadDelegate: self, delegateQueue: OperationQueue.main)
-        
-        assetDownloadURLSession.httpMaximumConnectionsPerHost = 3
         
         restorePersistenceManager()
     }
