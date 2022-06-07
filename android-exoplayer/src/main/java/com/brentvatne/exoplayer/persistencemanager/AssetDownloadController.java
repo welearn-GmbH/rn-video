@@ -99,7 +99,6 @@ public final class AssetDownloadController {
                 new DefaultDataSource.Factory(context, httpDataSourceFactory),
                 downloadCache
         );
-
         downloadManager = new DownloadManager(
                 context,
                 databaseProvider,
@@ -107,9 +106,8 @@ public final class AssetDownloadController {
                 httpDataSourceFactory,
                 Executors.newFixedThreadPool(6)
         );
-
         downloadManager.addListener(new DownloadManagerListener());
-
+        downloadManager.setMaxParallelDownloads(3);
         downloadIndex = downloadManager.getDownloadIndex();
 
         AssetDownloadService.addProgressListener(AssetDownloadController::onProgressChanged);

@@ -39,6 +39,8 @@ public class AssetPersistenceManager: NSObject {
             AVAssetDownloadURLSession(configuration: backgroundConfiguration,
                                       assetDownloadDelegate: self, delegateQueue: OperationQueue.main)
         
+        assetDownloadURLSession.httpMaximumConnectionsPerHost = 3
+        
         restorePersistenceManager()
     }
     
@@ -261,7 +263,7 @@ public class AssetPersistenceManager: NSObject {
                 assetTitle: id,
                 assetArtworkData: nil,
                 options: [
-                    AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: bitrate
+                    AVAssetDownloadTaskMinimumRequiredMediaBitrateKey: bitrate,
                 ]
             ) else { 
                 return    
