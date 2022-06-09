@@ -66,7 +66,7 @@ public class HLSAsset {
                                     bookmarkDataIsStale: &bookmarkDataIsStale)
 
             if bookmarkDataIsStale {
-                fatalError("Bookmark data is stale!")
+                return nil
             }
             
             let urlAsset = AVURLAsset(url: url)

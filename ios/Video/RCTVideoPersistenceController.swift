@@ -79,24 +79,32 @@ public class AssetPersistenceController: NSObject {
                         )!,
                         size: hlsAssetData.size
                     )
+                    
+                    // Check if asset has corresponding AVURLAsset
+                    // (either from hlsURL or bookmark). This also makes sure
+                    // that downloaded asset's files were not deleted
+                    guard let urlAsset = asset.getURLAsset() else {
+                        continue
+                    }
+                   
                     self.assets[id] = asset
-                    if (asset.status == HLSAsset.DownloadState.PENDING && self.tasks[asset.id] == nil) {
+                    if (
+                        asset.status == HLSAsset.DownloadState.PENDING &&
+                        self.tasks[asset.id] == nil
+                    ) {
                         // Download task was not recovered - delete leftover
                         // data and recreate the task
-                        let url = asset.getURLAsset()?.url
-                        if (url != nil) {
-                            do {
-                                try FileManager.default.removeItem(at: url!)
-                            } catch {
-                                print("Couldn't delete leftover data: \(error)")
-                            }
+                        do {
+                            try FileManager.default.removeItem(at: urlAsset.url)
+                        } catch {
+                            print("Couldn't delete leftover data: \(error)")
                         }
                         self.createDownloadTaskForAsset(asset)
                     }
                 }
                 self.checkQueue()
             } catch {
-                fatalError("Failed to parse json asset: \(error)")
+                fatalError("Failed to parse assets from json: \(error)")
             }
         }
     }
