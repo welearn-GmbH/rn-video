@@ -6,7 +6,6 @@ A simple class that holds information about an Asset.
 import AVFoundation
 
 public class HLSAsset {
-    static let stringSeparator = "***ayylmao***"
     /// The AVURLAsset corresponding to this Asset.
     var bookmark: Data?
     
@@ -69,9 +68,7 @@ public class HLSAsset {
                 return nil
             }
             
-            let urlAsset = AVURLAsset(url: url)
-            
-            return urlAsset
+            return AVURLAsset(url: url)
         } catch {
             return nil
         }

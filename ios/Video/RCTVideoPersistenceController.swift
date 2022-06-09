@@ -9,7 +9,8 @@ public class AssetPersistenceController: NSObject {
     static let sharedManager = AssetPersistenceController()
     
     static let downloadedHlsDataKey = "DownloadedHLSData"
-
+    static let concurrentDownloadsLimit = 1
+    
     /// Internal Bool used to track if the AssetPersistenceManager finished restoring its state.
     private var didRestorePersistenceController = false
 
@@ -25,7 +26,6 @@ public class AssetPersistenceController: NSObject {
 
     // MARK: Initialization
     override init() {
-
         super.init()
 
         // Create the configuration for the AVAssetDownloadURLSession.
@@ -36,7 +36,6 @@ public class AssetPersistenceController: NSObject {
         assetDownloadURLSession =
             AVAssetDownloadURLSession(configuration: backgroundConfiguration,
                                       assetDownloadDelegate: self, delegateQueue: OperationQueue.main)
-        
         
         restorePersistenceManager()
     }
@@ -49,10 +48,12 @@ public class AssetPersistenceController: NSObject {
         // Restore all tasks associated with the assetDownloadURLSession
         assetDownloadURLSession.getAllTasks { tasksArray in
             for task in tasksArray {
-                guard let assetDownloadTask = task as? AVAggregateAssetDownloadTask, let id = task.taskDescription else { break }
-                
-                // let urlAsset = assetDownloadTask.urlAsset
-
+                guard 
+                    let assetDownloadTask = task as? AVAggregateAssetDownloadTask,
+                    let id = task.taskDescription 
+                else {
+                    break
+                }                
                 self.tasks[id] = assetDownloadTask
             }
             
@@ -233,20 +234,22 @@ public class AssetPersistenceController: NSObject {
     
     func checkQueue() {
         var amountDownloading = 0
+        var assetToDownloadNext: HLSAsset?
         for (_, asset) in assets {
             if (asset.status == HLSAsset.DownloadState.PENDING) {
                 amountDownloading += 1
             }
-        }
-        if (amountDownloading >= 1) {
-            return
-        }
-        for (_, asset) in assets {
-            if (asset.status == HLSAsset.DownloadState.IDLE) {
-                createDownloadTaskForAsset(asset)
-                break
+            else if (asset.status == HLSAsset.DownloadState.IDLE && assetToDownloadNext == nil) {
+                assetToDownloadNext = asset
             }
         }
+        if (
+            amountDownloading >= AssetPersistenceController.concurrentDownloadsLimit ||
+            assetToDownloadNext == nil
+        ) {
+            return
+        }
+        createDownloadTaskForAsset(assetToDownloadNext!)
     }
     
     func createDownloadTaskForAsset(_ asset: HLSAsset) {
