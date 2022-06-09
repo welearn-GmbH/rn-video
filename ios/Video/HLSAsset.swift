@@ -8,13 +8,13 @@ import AVFoundation
 public class HLSAsset {
     static let stringSeparator = "***ayylmao***"
     /// The AVURLAsset corresponding to this Asset.
-    var urlAsset: AVURLAsset
+    var bookmark: Data?
     
     /// Media asset name (for notifications)
-    let id: String
+    var id: String
     
     /// HLS stream m3u8 url
-    let hlsURL: String
+    var hlsURL: String
     
     /// Download progress percentage
     var progress: Double = 0
@@ -29,15 +29,15 @@ public class HLSAsset {
     init(
          id: String,
          hlsURL: String,
-         urlAsset: AVURLAsset,
+         bookmark: Data? = nil,
          status: HLSAsset.DownloadState = HLSAsset.DownloadState.IDLE,
          size: Double = 0.0
     ) {
-        self.urlAsset = urlAsset
         self.id = id
         self.hlsURL = hlsURL
         self.status = status
         self.size = size
+        self.bookmark = bookmark
         
         if (status == HLSAsset.DownloadState.FINISHED) {
             self.progress = 1
@@ -55,17 +55,28 @@ public class HLSAsset {
         
         return data
     }
+    
+    public func getURLAsset() -> AVURLAsset? {
+        if (bookmark == nil) {
+            return AVURLAsset(url: URL(string: hlsURL)!)
+        }
+        var bookmarkDataIsStale = false
+        do {
+            let url = try URL(resolvingBookmarkData: bookmark!,
+                                    bookmarkDataIsStale: &bookmarkDataIsStale)
 
-    public func encodeAssetDataToString() -> String {
-        return id + HLSAsset.stringSeparator + hlsURL
+            if bookmarkDataIsStale {
+                fatalError("Bookmark data is stale!")
+            }
+            
+            let urlAsset = AVURLAsset(url: url)
+            
+            return urlAsset
+        } catch {
+            return nil
+        }
     }
 
-    public static func decodeAssetDataFromString(_ dataString: String) -> (id: String, hlsURL: String) {
-        let arr = dataString.components(separatedBy: HLSAsset.stringSeparator)
-        let id = arr[0]
-        let hlsURL = arr[1]
-        return (id, hlsURL)
-    }
 }
 
 /// Extends `Asset` to conform to the `Equatable` protocol.
@@ -93,4 +104,12 @@ extension HLSAsset {
         /// Download has failed
         case FAILED
     }
+}
+
+public struct HLSAssetData: Codable {
+    let id: String
+    let hlsURL: String
+    let size: Double
+    let status: HLSAsset.DownloadState.RawValue
+    let bookmark: Data?
 }
