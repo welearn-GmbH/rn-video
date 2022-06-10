@@ -50,6 +50,7 @@ public final class AssetDownloadController {
     private static final String DOWNLOAD_CONTENT_DIRECTORY = "downloads";
     private static final String DOWNLOAD_SHARED_PREFS = "downloads";
     private static final String TAG = "AssetDownloadController";
+    private static final Integer maxConcurrentDownloads = 1;
 
     @SuppressLint("StaticFieldLeak")
     private static Context context;
@@ -107,7 +108,7 @@ public final class AssetDownloadController {
                 Executors.newFixedThreadPool(6)
         );
         downloadManager.addListener(new DownloadManagerListener());
-        downloadManager.setMaxParallelDownloads(3);
+        downloadManager.setMaxParallelDownloads(maxConcurrentDownloads);
         downloadIndex = downloadManager.getDownloadIndex();
 
         AssetDownloadService.addProgressListener(AssetDownloadController::onProgressChanged);
