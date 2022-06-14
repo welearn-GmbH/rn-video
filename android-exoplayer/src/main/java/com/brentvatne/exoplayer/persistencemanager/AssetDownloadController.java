@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
@@ -65,8 +66,8 @@ public final class AssetDownloadController {
     private static DownloadIndex downloadIndex;
     public static DefaultTrackSelector.Parameters trackSelectorParameters;
 
-    public static HashMap<String, Download> downloads = new HashMap<>();
-    public static HashMap<String, HLSAsset> assets = new HashMap<>();
+    public static ConcurrentHashMap<String, Download> downloads = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, HLSAsset> assets = new ConcurrentHashMap<>();
 
     private static SharedPreferences sharedPreferences;
 
@@ -270,10 +271,10 @@ public final class AssetDownloadController {
             }
             Log.d(TAG,json);
             Gson gson = new Gson();
-            HashMap<String, HLSAsset> savedAssets = new HashMap<>();
-            savedAssets = gson.fromJson(json, new TypeToken<HashMap<String, HLSAsset>>(){}.getType());
+            ConcurrentHashMap<String, HLSAsset> savedAssets = new ConcurrentHashMap<>();
+            savedAssets = gson.fromJson(json, new TypeToken<ConcurrentHashMap<String, HLSAsset>>(){}.getType());
             if (savedAssets != null) {
-                assets = (HashMap<String, HLSAsset>) savedAssets;
+                assets = (ConcurrentHashMap<String, HLSAsset>) savedAssets;
             }
         } catch (Exception e) {
             Log.w(TAG, "Failed to restore saved assets data", e);
