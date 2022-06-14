@@ -1,6 +1,6 @@
 {
     "name": "react-native-video",
-    "version": "5.2.11",
+    "version": "5.2.12",
     "description": "A <Video /> element for react-native",
     "main": "Video.js",
     "license": "MIT",
