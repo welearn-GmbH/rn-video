@@ -91,7 +91,7 @@ public class AssetPersistenceController: NSObject {
                     self.assets[id] = asset
                     if (
                         asset.status == HLSAsset.DownloadState.PENDING &&
-                        self.tasks[asset.id] == nil
+                        self.tasks[asset.id] == nil || self.tasks[asset.id]?.error != nil
                     ) {
                         // Download task was not recovered - delete leftover
                         // data and recreate the task
@@ -309,8 +309,10 @@ public class AssetPersistenceController: NSObject {
     // MARK: Cancel download
 
     func cancelDownload(_ id: String) {
-        tasks[id]?.cancel()
+        let task = tasks[id]
         tasks.removeValue(forKey: id)
+        deleteAssetData(id)
+        task?.cancel()
         checkQueue()
     }
 }
@@ -390,15 +392,6 @@ extension AssetPersistenceController: AVAssetDownloadDelegate {
         
         guard let id = aggregateAssetDownloadTask.taskDescription else { return }
         downloadUrls[id] = location
-        
-        do {
-            let bookmark = try location.bookmarkData()
-            guard let asset = assets[id] else { return }
-            asset.bookmark = bookmark
-            saveAssetData(asset: asset)
-        } catch {
-            print("Failed to save asset bookmark: \(error)")
-        }
     }
 
     /// Method called when a child AVAssetDownloadTask completes.
