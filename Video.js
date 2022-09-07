@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
-import { findNodeHandle, Image, NativeEventEmitter, NativeModules, Platform, requireNativeComponent, StyleSheet, View, ViewPropTypes } from 'react-native';
+import { findNodeHandle, Image, NativeEventEmitter, NativeModules, Platform, requireNativeComponent, StyleSheet, View } from 'react-native';
+import { ViewPropTypes } from 'deprecated-react-native-prop-types';
 import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
 import DRMType from './DRMType';
 import FilterType from './FilterType';
