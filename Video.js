@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 import { findNodeHandle, Image, NativeEventEmitter, NativeModules, Platform, requireNativeComponent, StyleSheet, View } from 'react-native';
-import { ViewPropTypes } from 'deprecated-react-native-prop-types';
+import { ViewPropTypes, ImagePropTypes } from 'deprecated-react-native-prop-types';
 import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
 import DRMType from './DRMType';
 import FilterType from './FilterType';
@@ -460,7 +460,7 @@ Video.propTypes = {
   maxBitRate: PropTypes.number,
   resizeMode: PropTypes.string,
   poster: PropTypes.string,
-  posterResizeMode: Image.propTypes.resizeMode,
+  posterResizeMode: ImagePropTypes.resizeMode,
   repeat: PropTypes.bool,
   automaticallyWaitsToMinimizeStalling: PropTypes.bool,
   allowsExternalPlayback: PropTypes.bool,
