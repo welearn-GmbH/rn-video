@@ -343,27 +343,19 @@ extension AssetPersistenceController: AVAssetDownloadDelegate {
             asset.status = HLSAsset.DownloadState.FAILED
             saveAssetData(asset: asset)
             
-            switch (error.domain, error.code) {
-                case (NSURLErrorDomain, NSURLErrorCancelled):
-                    guard let localFileLocation = assets[id]?
-                        .getURLAsset()?
-                        .url
-                    else {
-                        return
-                    }
-
-                    do {
-                        try FileManager.default.removeItem(at: localFileLocation)
-                    } catch {
-                        print("An error occured trying to delete the contents on disk for \(asset.id): \(error)")
-                    }
-
-                case (NSURLErrorDomain, NSURLErrorUnknown):
-                    fatalError("Downloading HLS streams is not supported in the simulator.")
-
-                default:
-                    fatalError("An unexpected error occured \(error.domain)")
+            guard let localFileLocation = assets[id]?
+                .getURLAsset()?
+                .url
+            else {
+                return
             }
+
+            do {
+                try FileManager.default.removeItem(at: localFileLocation)
+            } catch {
+                print("An error occured trying to delete the contents on disk for \(asset.id): \(error)")
+            }
+            
         } else {
             do {
                 let bookmark = try downloadURL.bookmarkData()
