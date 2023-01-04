@@ -5,8 +5,8 @@ def safeExtGet(prop, fallback) {
 }
 
 android {
-    compileSdkVersion safeExtGet('compileSdkVersion', 31)
-    buildToolsVersion safeExtGet('buildToolsVersion', '30.0.2')
+    compileSdkVersion safeExtGet('compileSdkVersion', 28)
+    buildToolsVersion safeExtGet('buildToolsVersion', '28.0.3')
 
     compileOptions {
         targetCompatibility JavaVersion.VERSION_1_8
@@ -14,7 +14,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion safeExtGet('minSdkVersion', 21)
+        minSdkVersion safeExtGet('minSdkVersion', 24)
         targetSdkVersion safeExtGet('targetSdkVersion', 28)
         versionCode 1
         versionName "1.0"
@@ -27,7 +27,20 @@ android {
 }
 
 repositories {
+    mavenCentral()
     google()
+}
+
+
+buildscript {
+   repositories {
+       mavenCentral()
+       google()
+   }
+   dependencies {
+       classpath 'com.android.tools.build:gradle:7.0.3'
+       //classpath 'com.google.android.gms:strict-version-matcher-plugin:1.2.2'
+   }
 }
 
 dependencies {
@@ -48,4 +61,5 @@ dependencies {
     implementation 'com.google.android.exoplayer:extension-ima:2.18.1'
 
     implementation "com.squareup.okhttp3:okhttp:" + '$OKHTTP_VERSION'
+    implementation 'com.google.code.gson:gson:2.8.9'
 }

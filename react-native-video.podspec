@@ -12,6 +12,7 @@ Pod::Spec.new do |s|
   s.homepage       = 'https://github.com/react-native-video/react-native-video'
   s.source       = { :git => "https://github.com/react-native-video/react-native-video.git", :tag => "v#{s.version}" }
 
+  s.swift_version    = '5.0'
   s.ios.deployment_target = "9.0"
   s.tvos.deployment_target = "9.0"
 

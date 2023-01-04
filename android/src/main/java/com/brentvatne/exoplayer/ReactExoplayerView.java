@@ -810,11 +810,11 @@ class ReactExoplayerView extends FrameLayout implements
                 ).createMediaSource(mediaItem);
             case CONTENT_TYPE_HLS:
                 return new HlsMediaSource.Factory(
-                        mediaDataSourceFactory
-                ).setDrmSessionManagerProvider(drmProvider)
+                        AssetPersistenceManager.getDataSourceFactory()
+                )
                  .setLoadErrorHandlingPolicy(
                         config.buildLoadErrorHandlingPolicy(minLoadRetryCount)
-                ).createMediaSource(mediaItem);
+                ).createMediaSource(AssetPersistenceManager.mediaItemForUri(uri));
             case CONTENT_TYPE_OTHER:
                 return new ProgressiveMediaSource.Factory(
                         mediaDataSourceFactory

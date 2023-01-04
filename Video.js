@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { StyleSheet, requireNativeComponent, NativeModules, UIManager, View, Image, Platform, findNodeHandle } from 'react-native';
+import { StyleSheet, requireNativeComponent, NativeModules,NativeEventEmitter, UIManager, View, Image, Platform, findNodeHandle } from 'react-native';
 import { ViewPropTypes, ImagePropTypes } from 'deprecated-react-native-prop-types';
 import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
 import TextTrackType from './TextTrackType';
@@ -14,8 +14,54 @@ const styles = StyleSheet.create({
   },
 });
 
+
+const downloadHlsAsset = async (id, hlsUrl, bitrate) => {
+  return await NativeModules.AssetPersistenceManager.downloadStream(id, hlsUrl, bitrate)
+}
+
+const cancelHlsAssetDownload = async (id) => {
+  return await NativeModules.AssetPersistenceManager.cancelDownload(id)
+}
+
+const deleteHlsAsset = async (id) => {
+  return await NativeModules.AssetPersistenceManager.deleteAsset(id)
+}
+
+const getHlsAssets = async () => {
+  return await NativeModules.AssetPersistenceManager.getHLSAssetsForJS()
+}
+
+const hlsAssetListeners = [];
+
+const addHlsAssetsListener = (listener) => {
+  hlsAssetListeners.push(listener);
+  return () => {
+    hlsAssetListeners.splice(hlsAssetListeners.indexOf(listener), 1);
+  }
+}
+
+const eventEmitter = new NativeEventEmitter(NativeModules.AssetPersistenceEventEmitter);
+
+eventEmitter.addListener("hlsDownloads", (event) => {
+  hlsAssetListeners.forEach((listener) => {
+    listener(event);
+  });
+});
+
 const { VideoDecoderProperties } = NativeModules
-export { TextTrackType, FilterType, DRMType, VideoDecoderProperties }
+export { 
+  TextTrackType,
+  FilterType, 
+  DRMType, 
+  VideoDecoderProperties,
+  downloadHlsAsset,
+  cancelHlsAssetDownload,
+  deleteHlsAsset,
+  getHlsAssets,
+  addHlsAssetsListener 
+}
+
+
 
 export default class Video extends Component {
 

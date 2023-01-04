@@ -49,6 +49,9 @@
 		0177D39827170A7A00F5BE18 /* RCTVideo-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "RCTVideo-Bridging-Header.h"; path = "Video/RCTVideo-Bridging-Header.h"; sourceTree = "<group>"; };
 		0177D39927170A7A00F5BE18 /* RCTVideo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = RCTVideo.swift; path = Video/RCTVideo.swift; sourceTree = "<group>"; };
 		134814201AA4EA6300B7C361 /* libRCTVideo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRCTVideo.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		9093D838296469C900AC21FD /* RCTVideoPersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCTVideoPersistenceController.swift; sourceTree = "<group>"; };
+		9093D839296469C900AC21FD /* RCTVideoPersistenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RCTVideoPersistenceManager.swift; sourceTree = "<group>"; };
+		9093D83A296469C900AC21FD /* RCTVideoPersistenceManagerBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RCTVideoPersistenceManagerBridge.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +92,7 @@
 			children = (
 				01489050272001A100E69940 /* DataStructures */,
 				01489051272001A100E69940 /* Features */,
+				9093D837296469C900AC21FD /* Persistence */,
 				0177D39527170A7A00F5BE18 /* RCTSwiftLog */,
 				0177D39927170A7A00F5BE18 /* RCTVideo.swift */,
 				0177D39727170A7A00F5BE18 /* RCTVideoManager.m */,
@@ -101,6 +105,16 @@
 				49E995712048B4CE00EA7890 /* Frameworks */,
 				01450CB5271D5738005D8F6B /* libRCTVideo.a */,
 			);
+			sourceTree = "<group>";
+		};
+		9093D837296469C900AC21FD /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				9093D838296469C900AC21FD /* RCTVideoPersistenceController.swift */,
+				9093D839296469C900AC21FD /* RCTVideoPersistenceManager.swift */,
+				9093D83A296469C900AC21FD /* RCTVideoPersistenceManagerBridge.m */,
+			);
+			path = Persistence;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
