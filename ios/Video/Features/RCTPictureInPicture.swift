@@ -26,6 +26,7 @@ class RCTPictureInPicture: NSObject, AVPictureInPictureControllerDelegate {
     
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {        
         _videoController?.onPictureInPictureStatusChanged?([ "isActive": NSNumber(value: false)])
+        _videoController?.setPaused(_videoController?._isPaused)
     }
     
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
@@ -55,7 +56,6 @@ class RCTPictureInPicture: NSObject, AVPictureInPictureControllerDelegate {
            // nevermind
         }
 
-        
         // Create new controller passing reference to the AVPlayerLayer
         _pipController = AVPictureInPictureController(playerLayer:playerLayer!)
         
