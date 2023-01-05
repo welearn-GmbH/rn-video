@@ -18,11 +18,18 @@ public class AssetPersistenceManager extends ReactContextBaseJavaModule  {
     AssetDownloadController assetDownloadController;
     ReactApplicationContext reactContext;
     static String hlsDownloadsJSEventName = "hlsDownloads";
+    
+    @ReactMethod
+    public void addListener(String eventName) {
+        // silence RN missing listener methods warnings
+    }
+
+    @ReactMethod
+    public void removeListeners(Integer count) {
+        // silence RN missing listener methods warnings
+    }
 
     private void sendEvent(String eventName, @Nullable Object params) {
-        if (!reactContext.hasActiveCatalystInstance()) {
-            return;
-        }
         reactContext
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);

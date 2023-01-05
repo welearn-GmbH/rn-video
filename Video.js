@@ -40,7 +40,8 @@ const addHlsAssetsListener = (listener) => {
   }
 }
 
-const eventEmitter = new NativeEventEmitter(NativeModules.AssetPersistenceEventEmitter);
+// AssetPersistenceEventEmitter is undefined on Android, which is fine
+const eventEmitter = new NativeEventEmitter(NativeModules.AssetPersistenceEventEmitter || NativeModules.AssetPersistenceManager);
 
 eventEmitter.addListener("hlsDownloads", (event) => {
   hlsAssetListeners.forEach((listener) => {
@@ -123,7 +124,7 @@ export default class Video extends Component {
     this.setNativeProps({ fullscreen: false });
   };
 
-  save = async (options?) => {
+  save = async (options) => {
     return await NativeModules.VideoManager.save(options, findNodeHandle(this._root));
   }
 

@@ -111,6 +111,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.lang.Integer;
 
+import com.brentvatne.exoplayer.persistencemanager.AssetPersistenceManager;
+
 @SuppressLint("ViewConstructor")
 class ReactExoplayerView extends FrameLayout implements
         LifecycleEventListener,

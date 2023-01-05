@@ -77,7 +77,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
 #endif
 
 #if TARGET_OS_IOS
-    private let _pip:RCTPictureInPicture = RCTPictureInPicture(self.onPictureInPictureStatusChanged, self.onRestoreUserInterfaceForPictureInPictureStop)
+    private var _pip: RCTPictureInPicture?
 #endif
 
     // Events
@@ -108,6 +108,10 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
     init(eventDispatcher:RCTEventDispatcher!) {
         super.init(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
 
+#if TARGET_OS_IOS
+        _pip = RCTPictureInPicture(self)
+#endif
+        
         _imaAdsManager = RCTIMAAdsManager(video: self)
 
         _eventDispatcher = eventDispatcher
@@ -244,7 +248,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
             self.removePlayerLayer()
             self._playerObserver.player = nil
             self._playerObserver.playerItem = nil
-
+            
             // perform on next run loop, otherwise other passed react-props may not be set
             RCTVideoUtils.delay()
                 .then{ [weak self] in
@@ -395,7 +399,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
     @objc
     func setPictureInPicture(_ pictureInPicture:Bool) {
 #if TARGET_OS_IOS
-        _pip.setPictureInPicture(pictureInPicture)
+        _pip?.setPictureInPicture(pictureInPicture)
 #endif
     }
 
@@ -718,7 +722,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
             }
             self.layer.needsDisplayOnBoundsChange = true
 #if TARGET_OS_IOS
-            _pip.setupPipController(_playerLayer)
+            _pip?.setupPipController(_playerLayer)
 #endif
         }
     }

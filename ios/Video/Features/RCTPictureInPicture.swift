@@ -6,37 +6,35 @@ import Foundation
 
 #if TARGET_OS_IOS
 class RCTPictureInPicture: NSObject, AVPictureInPictureControllerDelegate {
-    private var _onPictureInPictureStatusChanged: RCTDirectEventBlock?
+    private var _videoController: RCTVideo?
     private var _onRestoreUserInterfaceForPictureInPictureStop: RCTDirectEventBlock?
     private var _restoreUserInterfaceForPIPStopCompletionHandler:((Bool) -> Void)? = nil
     private var _pipController:AVPictureInPictureController?
     private var _isActive:Bool = false
     
-    init(_ onPictureInPictureStatusChanged: @escaping RCTDirectEventBlock, _ onRestoreUserInterfaceForPictureInPictureStop: @escaping RCTDirectEventBlock) {
-        _onPictureInPictureStatusChanged = onPictureInPictureStatusChanged
-        _onRestoreUserInterfaceForPictureInPictureStop = onRestoreUserInterfaceForPictureInPictureStop
+    init(_ videoController: RCTVideo) {
+        _videoController = videoController
     }
     
-    func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        guard let _onPictureInPictureStatusChanged = _onPictureInPictureStatusChanged else { return }
-        
-        _onPictureInPictureStatusChanged([ "isActive": NSNumber(value: true)])
+    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
+        return
     }
     
-    func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        guard let _onPictureInPictureStatusChanged = _onPictureInPictureStatusChanged else { return }
-        
-        _onPictureInPictureStatusChanged([ "isActive": NSNumber(value: false)])
+    func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {        
+        _videoController?.onPictureInPictureStatusChanged?([ "isActive": NSNumber(value: true)])
+    }
+    
+    func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {        
+        _videoController?.onPictureInPictureStatusChanged?([ "isActive": NSNumber(value: false)])
     }
     
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
         
-        assert(_restoreUserInterfaceForPIPStopCompletionHandler == nil, "restoreUserInterfaceForPIPStopCompletionHandler was not called after picture in picture was exited.")
+        // Why do we care? This happens on every second toggle of PiP and crashes the app
+        // assert(_restoreUserInterfaceForPIPStopCompletionHandler == nil, "restoreUserInterfaceForPIPStopCompletionHandler was not called after picture in picture was exited.")
         
-        guard let _onRestoreUserInterfaceForPictureInPictureStop = _onRestoreUserInterfaceForPictureInPictureStop else { return }
-        
-        _onRestoreUserInterfaceForPictureInPictureStop([:])
-        
+        _videoController?.onRestoreUserInterfaceForPictureInPictureStop?([:])
+              
         _restoreUserInterfaceForPIPStopCompletionHandler = completionHandler
     }
     
@@ -47,9 +45,26 @@ class RCTPictureInPicture: NSObject, AVPictureInPictureControllerDelegate {
     }
     
     func setupPipController(_ playerLayer: AVPlayerLayer?) {
-        guard playerLayer != nil && AVPictureInPictureController.isPictureInPictureSupported() && _isActive else { return }
+        let isSupported = AVPictureInPictureController.isPictureInPictureSupported()
+        guard playerLayer != nil && isSupported else { return }
+        
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category.playback)
+        } catch {
+           // nevermind
+        }
+
+        
         // Create new controller passing reference to the AVPlayerLayer
         _pipController = AVPictureInPictureController(playerLayer:playerLayer!)
+        
+        if #available(iOS 14.2, *) {
+            _pipController?.canStartPictureInPictureAutomaticallyFromInline = true
+        } else {
+            // nevermind
+        }
+        
         _pipController?.delegate = self
     }
     
