@@ -76,7 +76,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
     private let _videoCache:RCTVideoCachingHandler = RCTVideoCachingHandler()
 #endif
 
-#if TARGET_OS_IOS
+#if os(iOS)
     private var _pip: RCTPictureInPicture?
 #endif
 
@@ -108,7 +108,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
     init(eventDispatcher:RCTEventDispatcher!) {
         super.init(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
 
-#if TARGET_OS_IOS
+#if os(iOS)
         _pip = RCTPictureInPicture(self)
 #endif
         
@@ -398,15 +398,15 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
 
     @objc
     func setPictureInPicture(_ pictureInPicture:Bool) {
-#if TARGET_OS_IOS
+#if os(iOS)
         _pip?.setPictureInPicture(pictureInPicture)
 #endif
     }
 
     @objc
     func setRestoreUserInterfaceForPIPStopCompletionHandler(_ restore:Bool) {
-#if TARGET_OS_IOS
-        _pip.setRestoreUserInterfaceForPIPStopCompletionHandler(restore)
+#if os(iOS)
+        _pip?.setRestoreUserInterfaceForPIPStopCompletionHandler(restore)
 #endif
     }
 
@@ -421,6 +421,11 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
     func setMixWithOthers(_ mixWithOthers:String?) {
         _mixWithOthers = mixWithOthers
         applyModifiers()
+    }
+    
+    @objc
+    func onPIPStoped() {
+        setPaused(_paused)
     }
 
     @objc
@@ -721,7 +726,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
                 self.layer.addSublayer(_playerLayer)
             }
             self.layer.needsDisplayOnBoundsChange = true
-#if TARGET_OS_IOS
+#if os(iOS)
             _pip?.setupPipController(_playerLayer)
 #endif
         }

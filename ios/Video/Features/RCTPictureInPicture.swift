@@ -4,7 +4,7 @@ import MediaAccessibility
 import React
 import Foundation
 
-#if TARGET_OS_IOS
+#if os(iOS)
 class RCTPictureInPicture: NSObject, AVPictureInPictureControllerDelegate {
     private var _videoController: RCTVideo?
     private var _onRestoreUserInterfaceForPictureInPictureStop: RCTDirectEventBlock?
@@ -26,7 +26,7 @@ class RCTPictureInPicture: NSObject, AVPictureInPictureControllerDelegate {
     
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {        
         _videoController?.onPictureInPictureStatusChanged?([ "isActive": NSNumber(value: false)])
-        _videoController?.setPaused(_videoController?._isPaused)
+        _videoController?.onPIPStoped()
     }
     
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
