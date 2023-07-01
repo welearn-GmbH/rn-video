@@ -853,6 +853,11 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
         super.removeFromSuperview()
     }
 
+    @objc
+    func unload() {
+        self.removeFromSuperview()
+    }
+
     // MARK: - Export
 
     @objc

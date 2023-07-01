@@ -23,6 +23,18 @@ class RCTVideoManager: RCTViewManager {
             }
         })
     }
+
+    @objc(unload:)
+    func unload(reactTag: NSNumber) -> Void {
+        bridge.uiManager.prependUIBlock({_ , viewRegistry in
+            let view = viewRegistry?[reactTag]
+            if !(view is RCTVideo) {
+                RCTLogError("Invalid view returned from registry, expecting RCTVideo, got: %@", String(describing: view))
+            } else if let view = view as? RCTVideo {
+                view.unload()
+            }
+        })
+    }
     
     @objc(setLicenseResult:reactTag:)
     func setLicenseResult(license: NSString, reactTag: NSNumber) -> Void {

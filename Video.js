@@ -62,8 +62,6 @@ export {
   addHlsAssetsListener 
 }
 
-
-
 export default class Video extends Component {
 
   constructor(props) {
@@ -101,6 +99,7 @@ export default class Video extends Component {
     return strObj;
   }
 
+
   seek = (time, tolerance = 100) => {
     if (isNaN(time)) {throw new Error('Specified time is not a number');}
 
@@ -126,6 +125,10 @@ export default class Video extends Component {
 
   save = async (options) => {
     return await NativeModules.VideoManager.save(options, findNodeHandle(this._root));
+  }
+
+  unload = () => {
+    NativeModules.VideoManager.save && NativeModules.VideoManager.unload(findNodeHandle(this._root));
   }
 
   restoreUserInterfaceForPictureInPictureStopCompleted = (restored) => {
@@ -333,6 +336,10 @@ export default class Video extends Component {
     }
     return UIManager.getViewManagerConfig(viewManagerName);
   };
+
+  componentWillUnmount = () => {
+    this.unload()
+  }
 
   render() {
     const resizeMode = this.props.resizeMode;

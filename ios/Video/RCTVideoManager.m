@@ -68,6 +68,8 @@ RCT_EXTERN_METHOD(save:(NSDictionary *)options
         resolver:(RCTPromiseResolveBlock)resolve
         rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(unload:(nonnull NSNumber *)reactTag)
+
 RCT_EXTERN_METHOD(setLicenseResult:(NSString *)license
          reactTag:(nonnull NSNumber *)reactTag)
 
