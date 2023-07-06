@@ -128,7 +128,7 @@ export default class Video extends Component {
   }
 
   unload = () => {
-    NativeModules.VideoManager.save && NativeModules.VideoManager.unload(findNodeHandle(this._root));
+    NativeModules.VideoManager?.unload && NativeModules.VideoManager.unload(findNodeHandle(this._root));
   }
 
   restoreUserInterfaceForPictureInPictureStopCompleted = (restored) => {
