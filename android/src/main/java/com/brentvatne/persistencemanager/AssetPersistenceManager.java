@@ -10,9 +10,13 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.offline.DownloadService;
-import com.google.android.exoplayer2.upstream.DataSource;
+
+import androidx.media3.common.MediaItem;
+import androidx.media3.exoplayer.offline.DownloadService;
+import androidx.media3.datasource.DataSource;
+import com.brentvatne.exoplayer.persistencemanager.AssetDownloadController;
+import com.brentvatne.exoplayer.persistencemanager.AssetDownloadService;
+import com.brentvatne.exoplayer.persistencemanager.HLSAsset;
 
 public class AssetPersistenceManager extends ReactContextBaseJavaModule  {
     AssetDownloadController assetDownloadController;

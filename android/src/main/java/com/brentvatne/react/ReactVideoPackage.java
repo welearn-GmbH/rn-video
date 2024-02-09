@@ -29,9 +29,10 @@ public class ReactVideoPackage implements ReactPackage {
 
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-        List<NativeModule> modules = new ArrayList<>();
+        List<NativeModule> modules = new ArrayList<NativeModule>();
 
         modules.add(new VideoDecoderPropertiesModule(reactContext));
+        modules.add(new VideoManagerModule(reactContext));
         modules.add(new AssetPersistenceManager(reactContext));
 
         return modules;

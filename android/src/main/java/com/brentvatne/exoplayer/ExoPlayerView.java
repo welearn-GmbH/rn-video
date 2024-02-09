@@ -1,8 +1,21 @@
 package com.brentvatne.exoplayer;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import androidx.core.content.ContextCompat;
+import androidx.media3.common.AdViewProvider;
+import androidx.media3.common.C;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Player;
+import androidx.media3.common.Timeline;
+import androidx.media3.common.Tracks;
+import androidx.media3.common.VideoSize;
+import androidx.media3.common.text.Cue;
+import androidx.media3.common.util.Assertions;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.trackselection.TrackSelectionArray;
+import androidx.media3.ui.SubtitleView;
+
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -12,22 +25,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.Tracks;
-import com.google.android.exoplayer2.text.Cue;
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
-import com.google.android.exoplayer2.ui.SubtitleView;
-import com.google.android.exoplayer2.util.Assertions;
-import com.google.android.exoplayer2.video.VideoSize;
+import com.brentvatne.common.api.ResizeMode;
+import com.brentvatne.common.api.SubtitleStyle;
 
 import java.util.List;
 
-public final class ExoPlayerView extends FrameLayout {
+public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
 
     private View surfaceView;
     private final View shutterView;
@@ -37,6 +40,7 @@ public final class ExoPlayerView extends FrameLayout {
     private ExoPlayer player;
     private Context context;
     private ViewGroup.LayoutParams layoutParams;
+    private final FrameLayout adOverlayFrameLayout;
 
     private boolean useTextureView = true;
     private boolean useSecureView = false;
@@ -71,7 +75,7 @@ public final class ExoPlayerView extends FrameLayout {
         shutterView = new View(getContext());
         shutterView.setLayoutParams(layoutParams);
         shutterView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.black));
-
+    
         subtitleLayout = new SubtitleView(context);
         subtitleLayout.setLayoutParams(layoutParams);
         subtitleLayout.setUserDefaultStyle();
@@ -79,8 +83,11 @@ public final class ExoPlayerView extends FrameLayout {
 
         updateSurfaceView();
 
+        adOverlayFrameLayout = new FrameLayout(context);
+
         layout.addView(shutterView, 1, layoutParams);
         layout.addView(subtitleLayout, 2, layoutParams);
+        layout.addView(adOverlayFrameLayout, 3, layoutParams);
 
         addViewInLayout(layout, 0, aspectRatioParams);
     }
@@ -100,6 +107,7 @@ public final class ExoPlayerView extends FrameLayout {
             player.setVideoSurfaceView((SurfaceView) surfaceView);
         }
     }
+
     public void setSubtitleStyle(SubtitleStyle style) {
         // ensure we reset subtile style before reapplying it
         subtitleLayout.setUserDefaultStyle();
@@ -111,6 +119,10 @@ public final class ExoPlayerView extends FrameLayout {
         subtitleLayout.setPadding(style.getPaddingLeft(), style.getPaddingTop(), style.getPaddingRight(), style.getPaddingBottom());
     }
 
+    public void setShutterColor(Integer color) {
+        shutterView.setBackgroundColor(color);
+    }
+
     private void updateSurfaceView() {
         View view;
         if (!useTextureView || useSecureView) {
@@ -120,6 +132,8 @@ public final class ExoPlayerView extends FrameLayout {
             }
         } else {
             view = new TextureView(context);
+            // Support opacity properly:
+            ((TextureView) view).setOpaque(false);
         }
         view.setLayoutParams(layoutParams);
 
@@ -142,6 +156,13 @@ public final class ExoPlayerView extends FrameLayout {
     public void requestLayout() {
         super.requestLayout();
         post(measureAndLayout);
+    }
+
+    // AdsLoader.AdViewProvider implementation.
+
+    @Override
+    public ViewGroup getAdViewGroup() {
+        return Assertions.checkNotNull(adOverlayFrameLayout, "exo_ad_overlay must be present for ad playback");
     }
 
     /**
@@ -177,7 +198,6 @@ public final class ExoPlayerView extends FrameLayout {
             layout.setResizeMode(resizeMode);
             post(measureAndLayout);
         }
-
     }
 
     /**
@@ -209,14 +229,11 @@ public final class ExoPlayerView extends FrameLayout {
         updateShutterViewVisibility();
     }
 
-    private final Runnable measureAndLayout = new Runnable() {
-        @Override
-        public void run() {
-            measure(
-                    MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY));
-            layout(getLeft(), getTop(), getRight(), getBottom());
-        }
+    private final Runnable measureAndLayout = () -> {
+        measure(
+                MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(getHeight(), MeasureSpec.EXACTLY));
+        layout(getLeft(), getTop(), getRight(), getBottom());
     };
 
     private void updateForCurrentTrackSelections() {
@@ -242,14 +259,10 @@ public final class ExoPlayerView extends FrameLayout {
 
     private final class ComponentListener implements Player.Listener {
 
-        // TextRenderer.Output implementation
-
         @Override
         public void onCues(List<Cue> cues) {
             subtitleLayout.setCues(cues);
         }
-
-        // ExoPlayer.VideoListener implementation
 
         @Override
         public void onVideoSizeChanged(VideoSize videoSize) {
@@ -267,56 +280,9 @@ public final class ExoPlayerView extends FrameLayout {
             shutterView.setVisibility(INVISIBLE);
         }
 
-        // ExoPlayer.EventListener implementation
-
-        @Override
-        public void onIsLoadingChanged(boolean isLoading) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onPlaybackStateChanged(int playbackState) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onPlayerError(PlaybackException e) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onPositionDiscontinuity(Player.PositionInfo oldPosition, Player.PositionInfo newPosition, int reason) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onTimelineChanged(Timeline timeline, int reason) {
-            // Do nothing.
-        }
-
         @Override
         public void onTracksChanged(Tracks tracks) {
             updateForCurrentTrackSelections();
-        }
-
-        @Override
-        public void onPlaybackParametersChanged(PlaybackParameters params) {
-            // Do nothing
-        }
-
-        @Override
-        public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
-            // Do nothing.
-        }
-
-        @Override
-        public void onRepeatModeChanged(int repeatMode) {
-            // Do nothing.
         }
     }
 

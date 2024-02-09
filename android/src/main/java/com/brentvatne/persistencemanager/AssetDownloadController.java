@@ -7,28 +7,33 @@ import androidx.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.google.android.exoplayer2.DefaultRenderersFactory;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.database.DatabaseProvider;
-import com.google.android.exoplayer2.database.StandaloneDatabaseProvider;
-import com.google.android.exoplayer2.offline.Download;
-import com.google.android.exoplayer2.offline.DownloadCursor;
-import com.google.android.exoplayer2.offline.DownloadHelper;
-import com.google.android.exoplayer2.offline.DownloadIndex;
-import com.google.android.exoplayer2.offline.DownloadManager;
-import com.google.android.exoplayer2.offline.DownloadRequest;
-import com.google.android.exoplayer2.offline.DownloadService;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultDataSource;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
-import com.google.android.exoplayer2.upstream.HttpDataSource;
-import com.google.android.exoplayer2.upstream.cache.Cache;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
-import com.google.android.exoplayer2.upstream.cache.NoOpCacheEvictor;
-import com.google.android.exoplayer2.upstream.cache.SimpleCache;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
+import androidx.media3.common.MediaItem;
+import androidx.media3.database.DatabaseProvider;
+import androidx.media3.database.StandaloneDatabaseProvider;
+import androidx.media3.exoplayer.offline.Download;
+import androidx.media3.exoplayer.offline.DownloadCursor;
+import androidx.media3.exoplayer.offline.DownloadHelper;
+import androidx.media3.exoplayer.offline.DownloadIndex;
+import androidx.media3.exoplayer.offline.DownloadManager;
+import androidx.media3.exoplayer.offline.DownloadRequest;
+import androidx.media3.exoplayer.offline.DownloadService;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
+import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.datasource.HttpDataSource;
+import androidx.media3.datasource.cache.Cache;
+import androidx.media3.datasource.cache.CacheDataSource;
+import androidx.media3.datasource.cache.NoOpCacheEvictor;
+import androidx.media3.datasource.cache.SimpleCache;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
+import com.brentvatne.exoplayer.persistencemanager.HLSAsset.HLSAssetStatus;
+import com.brentvatne.exoplayer.persistencemanager.HLSAsset;
+import com.brentvatne.exoplayer.persistencemanager.AssetDownloadNotificationHelper;
+import com.brentvatne.exoplayer.persistencemanager.AssetDownloadService;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +45,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public final class AssetDownloadController {
-    private static final HashMap<Integer, HLSAsset.HLSAssetStatus> statusMap = new HashMap(){{
+    private static final HashMap<Integer, HLSAssetStatus> statusMap = new HashMap(){{
         put(Download.STATE_DOWNLOADING, HLSAsset.HLSAssetStatus.PENDING);
         put(Download.STATE_FAILED, HLSAsset.HLSAssetStatus.FAILED);
         put(Download.STATE_COMPLETED, HLSAsset.HLSAssetStatus.FINISHED);

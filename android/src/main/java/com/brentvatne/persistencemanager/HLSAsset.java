@@ -2,9 +2,11 @@ package com.brentvatne.exoplayer.persistencemanager;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.offline.StreamKey;
-import com.google.android.exoplayer2.util.MimeTypes;
+
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.MimeTypes;
+import androidx.media3.common.StreamKey;
+
 
 import java.util.List;
 

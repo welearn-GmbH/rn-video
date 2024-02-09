@@ -9,9 +9,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.core.app.NotificationCompat;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.offline.Download;
-import com.google.android.exoplayer2.scheduler.Requirements;
+import androidx.media3.common.C;
+import androidx.media3.exoplayer.offline.Download;
+import androidx.media3.exoplayer.scheduler.Requirements;
 
 import java.util.List;
 
