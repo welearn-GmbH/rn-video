@@ -1,19 +1,18 @@
 package com.brentvatne.exoplayer;
 
 import android.content.Context;
+
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.media3.common.AdViewProvider;
 import androidx.media3.common.C;
-import androidx.media3.common.PlaybackException;
-import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Format;
 import androidx.media3.common.Player;
-import androidx.media3.common.Timeline;
 import androidx.media3.common.Tracks;
 import androidx.media3.common.VideoSize;
 import androidx.media3.common.text.Cue;
 import androidx.media3.common.util.Assertions;
 import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.exoplayer.trackselection.TrackSelectionArray;
 import androidx.media3.ui.SubtitleView;
 
 import android.util.AttributeSet;
@@ -27,6 +26,7 @@ import android.widget.FrameLayout;
 
 import com.brentvatne.common.api.ResizeMode;
 import com.brentvatne.common.api.SubtitleStyle;
+import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
@@ -38,8 +38,8 @@ public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
     private final AspectRatioFrameLayout layout;
     private final ComponentListener componentListener;
     private ExoPlayer player;
-    private Context context;
-    private ViewGroup.LayoutParams layoutParams;
+    private final Context context;
+    private final ViewGroup.LayoutParams layoutParams;
     private final FrameLayout adOverlayFrameLayout;
 
     private boolean useTextureView = true;
@@ -86,10 +86,10 @@ public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
         adOverlayFrameLayout = new FrameLayout(context);
 
         layout.addView(shutterView, 1, layoutParams);
-        layout.addView(subtitleLayout, 2, layoutParams);
-        layout.addView(adOverlayFrameLayout, 3, layoutParams);
+        layout.addView(adOverlayFrameLayout, 2, layoutParams);
 
         addViewInLayout(layout, 0, aspectRatioParams);
+        addViewInLayout(subtitleLayout, 1, layoutParams);
     }
 
     private void clearVideoView() {
@@ -108,6 +108,10 @@ public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
         }
     }
 
+    public boolean isPlaying() {
+        return player != null && player.isPlaying();
+    }
+
     public void setSubtitleStyle(SubtitleStyle style) {
         // ensure we reset subtile style before reapplying it
         subtitleLayout.setUserDefaultStyle();
@@ -117,6 +121,13 @@ public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
             subtitleLayout.setFixedTextSize(TypedValue.COMPLEX_UNIT_SP, style.getFontSize());
         }
         subtitleLayout.setPadding(style.getPaddingLeft(), style.getPaddingTop(), style.getPaddingRight(), style.getPaddingBottom());
+        if (style.getOpacity() != 0) {
+            subtitleLayout.setAlpha(style.getOpacity());
+            subtitleLayout.setVisibility(View.VISIBLE);
+        } else {
+            subtitleLayout.setVisibility(View.GONE);
+        }
+
     }
 
     public void setShutterColor(Integer color) {
@@ -200,16 +211,6 @@ public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
         }
     }
 
-    /**
-     * Get the view onto which video is rendered. This is either a {@link SurfaceView} (default)
-     * or a {@link TextureView} if the {@code use_texture_view} view attribute has been set to true.
-     *
-     * @return either a {@link SurfaceView} or a {@link TextureView}.
-     */
-    public View getVideoSurfaceView() {
-        return surfaceView;
-    }
-
     public void setUseTextureView(boolean useTextureView) {
         if (useTextureView != this.useTextureView) {
             this.useTextureView = useTextureView;
@@ -236,19 +237,22 @@ public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
         layout(getLeft(), getTop(), getRight(), getBottom());
     };
 
-    private void updateForCurrentTrackSelections() {
-        if (player == null) {
+    private void updateForCurrentTrackSelections(Tracks tracks) {
+        if (tracks == null) {
             return;
         }
-        TrackSelectionArray selections = player.getCurrentTrackSelections();
-        for (int i = 0; i < selections.length; i++) {
-            if (player.getRendererType(i) == C.TRACK_TYPE_VIDEO && selections.get(i) != null) {
-                // Video enabled so artwork must be hidden. If the shutter is closed, it will be opened in
-                // onRenderedFirstFrame().
+        ImmutableList<Tracks.Group> groups = tracks.getGroups();
+        for (Tracks.Group group: groups) {
+            if (group.getType() == C.TRACK_TYPE_VIDEO && group.length > 0) {
+                // get the first track of the group to identify aspect ratio
+                Format format = group.getTrackFormat(0);
+
+                // update aspect ratio !
+                layout.setAspectRatio(format.height == 0 ? 1 : (format.width * format.pixelWidthHeightRatio) / format.height);
                 return;
             }
         }
-        // Video disabled so the shutter must be closed.
+        // no video tracks, in that case refresh shutterView visibility
         shutterView.setVisibility(this.hideShutterView ? View.INVISIBLE : View.VISIBLE);
     }
 
@@ -260,14 +264,19 @@ public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
     private final class ComponentListener implements Player.Listener {
 
         @Override
-        public void onCues(List<Cue> cues) {
+        public void onCues(@NonNull List<Cue> cues) {
             subtitleLayout.setCues(cues);
         }
 
         @Override
         public void onVideoSizeChanged(VideoSize videoSize) {
             boolean isInitialRatio = layout.getAspectRatio() == 0;
-            layout.setAspectRatio(videoSize.height == 0 ? 1 : (videoSize.width * videoSize.pixelWidthHeightRatio) / videoSize.height);
+            if (videoSize.height == 0 || videoSize.width == 0) {
+                // When changing video track we receive an ghost state with height / width = 0
+                // No need to resize the view in that case
+                return;
+            }
+            layout.setAspectRatio((videoSize.width * videoSize.pixelWidthHeightRatio) / videoSize.height);
 
             // React native workaround for measuring and layout on initial load.
             if (isInitialRatio) {
@@ -281,9 +290,8 @@ public final class ExoPlayerView extends FrameLayout implements AdViewProvider {
         }
 
         @Override
-        public void onTracksChanged(Tracks tracks) {
-            updateForCurrentTrackSelections();
+        public void onTracksChanged(@NonNull Tracks tracks) {
+            updateForCurrentTrackSelections(tracks);
         }
     }
-
 }

@@ -26,6 +26,12 @@ export default {
         content="https://react-native-video.github.io/react-native-video/thumbnail.jpg"
       />
       <meta name="twitter:image:alt" content="React Native Video" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap"
+        rel="stylesheet"
+      />
     </>
   ),
   logo: (
@@ -35,10 +41,10 @@ export default {
   ),
   faviconGlyph: '🎬',
   project: {
-    link: 'https://github.com/react-native-video/react-native-video',
+    link: 'https://github.com/TheWidlarzGroup/react-native-video',
   },
   docsRepositoryBase:
-    'https://github.com/react-native-video/react-native-video/tree/master/docs/',
+    'https://github.com/TheWidlarzGroup/react-native-video/tree/master/docs/',
   footer: {
     text: (
       <span>

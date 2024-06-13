@@ -22,15 +22,20 @@ protocol RCTPlayerObserverHandler: RCTPlayerObserverHandlerObjc {
     func handlePlaybackBufferKeyEmpty(playerItem: AVPlayerItem, change: NSKeyValueObservedChange<Bool>)
     func handlePlaybackLikelyToKeepUp(playerItem: AVPlayerItem, change: NSKeyValueObservedChange<Bool>)
     func handlePlaybackRateChange(player: AVPlayer, change: NSKeyValueObservedChange<Float>)
+    func handleTimeControlStatusChange(player: AVPlayer, change: NSKeyValueObservedChange<AVPlayer.TimeControlStatus>)
     func handleVolumeChange(player: AVPlayer, change: NSKeyValueObservedChange<Float>)
     func handleExternalPlaybackActiveChange(player: AVPlayer, change: NSKeyValueObservedChange<Bool>)
     func handleViewControllerOverlayViewFrameChange(overlayView: UIView, change: NSKeyValueObservedChange<CGRect>)
     func handleTracksChange(playerItem: AVPlayerItem, change: NSKeyValueObservedChange<[AVPlayerItemTrack]>)
+    func handleLegibleOutput(strings: [NSAttributedString])
+    func handlePictureInPictureEnter()
+    func handlePictureInPictureExit()
+    func handleRestoreUserInterfaceForPictureInPictureStop()
 }
 
 // MARK: - RCTPlayerObserver
 
-class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
+class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate, AVPlayerItemLegibleOutputPushDelegate, AVPlayerViewControllerDelegate {
     weak var _handlers: RCTPlayerObserverHandler?
 
     var player: AVPlayer? {
@@ -46,6 +51,8 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         }
     }
 
+    var subtitleStyle: SubtitleStyle?
+
     var playerItem: AVPlayerItem? {
         willSet {
             removePlayerItemObservers()
@@ -57,8 +64,12 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
 
             // handle timedMetadata
             let metadataOutput = AVPlayerItemMetadataOutput()
+            let legibleOutput = AVPlayerItemLegibleOutput()
             playerItem.add(metadataOutput)
+            playerItem.add(legibleOutput)
             metadataOutput.setDelegate(self, queue: .main)
+            legibleOutput.setDelegate(self, queue: .main)
+            legibleOutput.suppressesPlayerRendering = subtitleStyle?.opacity == 0 ? true : false
         }
     }
 
@@ -89,6 +100,7 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
 
     private var _playerRateChangeObserver: NSKeyValueObservation?
     private var _playerVolumeChangeObserver: NSKeyValueObservation?
+    private var _playerTimeControlStatusChangeObserver: NSKeyValueObservation?
     private var _playerExternalPlaybackActiveObserver: NSKeyValueObservation?
     private var _playerItemStatusObserver: NSKeyValueObservation?
     private var _playerPlaybackBufferEmptyObserver: NSKeyValueObservation?
@@ -98,6 +110,7 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
     private var _playerLayerReadyForDisplayObserver: NSKeyValueObservation?
     private var _playerViewControllerOverlayFrameObserver: NSKeyValueObservation?
     private var _playerTracksObserver: NSKeyValueObservation?
+    private var _restoreUserInterfaceForPIPStopCompletionHandler: ((Bool) -> Void)?
 
     deinit {
         if let _handlers {
@@ -113,6 +126,14 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         }
     }
 
+    func legibleOutput(_: AVPlayerItemLegibleOutput,
+                       didOutputAttributedStrings strings: [NSAttributedString],
+                       nativeSampleBuffers _: [Any],
+                       forItemTime _: CMTime) {
+        guard let _handlers else { return }
+        _handlers.handleLegibleOutput(strings: strings)
+    }
+
     func addPlayerObservers() {
         guard let player, let _handlers else {
             return
@@ -120,6 +141,7 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
 
         _playerRateChangeObserver = player.observe(\.rate, options: [.old], changeHandler: _handlers.handlePlaybackRateChange)
         _playerVolumeChangeObserver = player.observe(\.volume, options: [.old], changeHandler: _handlers.handleVolumeChange)
+        _playerTimeControlStatusChangeObserver = player.observe(\.timeControlStatus, options: [.old], changeHandler: _handlers.handleTimeControlStatusChange)
         #if !os(visionOS)
             _playerExternalPlaybackActiveObserver = player.observe(\.isExternalPlaybackActive, changeHandler: _handlers.handleExternalPlaybackActiveChange)
         #endif
@@ -128,6 +150,8 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
     func removePlayerObservers() {
         _playerRateChangeObserver?.invalidate()
         _playerExternalPlaybackActiveObserver?.invalidate()
+        _playerVolumeChangeObserver?.invalidate()
+        _playerTimeControlStatusChangeObserver?.invalidate()
     }
 
     func addPlayerItemObservers() {
@@ -176,11 +200,14 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
             options: [.new, .old],
             changeHandler: _handlers.handleViewControllerOverlayViewFrameChange
         )
+
+        playerViewController.delegate = self
     }
 
     func removePlayerViewControllerObservers() {
         _playerViewControllerReadyForDisplayObserver?.invalidate()
         _playerViewControllerOverlayFrameObserver?.invalidate()
+        playerViewController?.delegate = nil
     }
 
     func addPlayerLayerObserver() {
@@ -271,5 +298,35 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         if let _handlers {
             NotificationCenter.default.removeObserver(_handlers)
         }
+    }
+
+    func playerViewControllerDidStartPictureInPicture(_: AVPlayerViewController) {
+        guard let _handlers else { return }
+
+        _handlers.handlePictureInPictureEnter()
+    }
+
+    func playerViewControllerDidStopPictureInPicture(_: AVPlayerViewController) {
+        guard let _handlers else { return }
+
+        _handlers.handlePictureInPictureExit()
+    }
+
+    func playerViewController(
+        _: AVPlayerViewController,
+        restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void
+    ) {
+        guard let _handlers else { return }
+
+        _handlers.handleRestoreUserInterfaceForPictureInPictureStop()
+
+        _restoreUserInterfaceForPIPStopCompletionHandler = completionHandler
+    }
+
+    func setRestoreUserInterfaceForPIPStopCompletionHandler(_ restore: Bool) {
+        guard let _restoreUserInterfaceForPIPStopCompletionHandler else { return }
+
+        _restoreUserInterfaceForPIPStopCompletionHandler(restore)
+        self._restoreUserInterfaceForPIPStopCompletionHandler = nil
     }
 }

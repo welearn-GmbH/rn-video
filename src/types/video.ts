@@ -22,15 +22,23 @@ export type ReactVideoSourceProperties = {
   startPosition?: number;
   cropStart?: number;
   cropEnd?: number;
-  title?: string;
-  subtitle?: string;
-  description?: string;
-  customImageUri?: string;
+  metadata?: VideoMetadata;
+  textTracksAllowChunklessPreparation?: boolean;
 };
 
 export type ReactVideoSource = Readonly<
-  ReactVideoSourceProperties | NodeRequire
+  Omit<ReactVideoSourceProperties, 'uri'> & {
+    uri?: string | NodeRequire;
+  }
 >;
+
+export type VideoMetadata = Readonly<{
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  artist?: string;
+  imageUri?: string;
+}>;
 
 export type DebugConfig = Readonly<{
   enable?: boolean;
@@ -53,21 +61,39 @@ export type Drm = Readonly<{
   base64Certificate?: boolean; // ios default: false
   /* eslint-disable @typescript-eslint/no-unused-vars */
   getLicense?: (
-    licenseUrl: string,
-    contentId: string,
     spcBase64: string,
+    contentId: string,
+    licenseUrl: string,
+    loadedLicenseUrl: string,
   ) => void; // ios
   /* eslint-enable @typescript-eslint/no-unused-vars */
 }>;
+
+export enum BufferingStrategyType {
+  DEFAULT = 'Default',
+  DISABLE_BUFFERING = 'DisableBuffering',
+  DEPENDING_ON_MEMORY = 'DependingOnMemory',
+}
+
+export type BufferConfigLive = {
+  maxPlaybackSpeed?: number;
+  minPlaybackSpeed?: number;
+  maxOffsetMs?: number;
+  minOffsetMs?: number;
+  targetOffsetMs?: number;
+};
 
 export type BufferConfig = {
   minBufferMs?: number;
   maxBufferMs?: number;
   bufferForPlaybackMs?: number;
   bufferForPlaybackAfterRebufferMs?: number;
+  backBufferDurationMs?: number; // Android
   maxHeapAllocationPercent?: number;
   minBackBufferMemoryReservePercent?: number;
   minBufferMemoryReservePercent?: number;
+  cacheSizeMB?: number;
+  live?: BufferConfigLive;
 };
 
 export enum SelectedTrackType {
@@ -92,7 +118,7 @@ export enum SelectedVideoTrackType {
 
 export type SelectedVideoTrack = {
   type: SelectedVideoTrackType;
-  value?: number;
+  value?: string | number;
 };
 
 export type SubtitleStyle = {
@@ -101,9 +127,10 @@ export type SubtitleStyle = {
   paddingBottom?: number;
   paddingLeft?: number;
   paddingRight?: number;
+  opacity?: number;
 };
 
-export enum TextTracksType {
+export enum TextTrackType {
   SUBRIP = 'application/x-subrip',
   TTML = 'application/ttml+xml',
   VTT = 'text/vtt',
@@ -112,11 +139,11 @@ export enum TextTracksType {
 export type TextTracks = {
   title: string;
   language: ISO639_1;
-  type: TextTracksType;
+  type: TextTrackType;
   uri: string;
 }[];
 
-export type TextTrackType =
+export type TextTrackSelectionType =
   | 'system'
   | 'disabled'
   | 'title'
@@ -124,11 +151,11 @@ export type TextTrackType =
   | 'index';
 
 export type SelectedTextTrack = Readonly<{
-  type: TextTrackType;
+  type: TextTrackSelectionType;
   value?: string | number;
 }>;
 
-export type AudioTrackType =
+export type AudioTrackSelectionType =
   | 'system'
   | 'disabled'
   | 'title'
@@ -136,7 +163,7 @@ export type AudioTrackType =
   | 'index';
 
 export type SelectedAudioTrack = Readonly<{
-  type: AudioTrackType;
+  type: AudioTrackSelectionType;
   value?: string | number;
 }>;
 
@@ -176,16 +203,20 @@ export enum PosterResizeModeType {
 
 export type AudioOutput = 'speaker' | 'earpiece';
 
+export type ControlsStyles = {
+  hideSeekBar?: boolean;
+  seekIncrementMS?: number;
+};
+
 export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
   source?: ReactVideoSource;
   drm?: Drm;
   style?: StyleProp<ViewStyle>;
   adTagUrl?: string;
-  audioOnly?: boolean;
   audioOutput?: AudioOutput; // Mobile
   automaticallyWaitsToMinimizeStalling?: boolean; // iOS
-  backBufferDurationMs?: number; // Android
   bufferConfig?: BufferConfig; // Android
+  bufferingStrategy?: BufferingStrategyType;
   chapters?: Chapters[]; // iOS
   contentStartTime?: number; // Android
   controls?: boolean;
@@ -217,17 +248,19 @@ export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
   repeat?: boolean;
   reportBandwidth?: boolean; //Android
   resizeMode?: EnumValues<VideoResizeMode>;
+  showNotificationControls?: boolean; // Android, iOS
   selectedAudioTrack?: SelectedTrack;
   selectedTextTrack?: SelectedTrack;
   selectedVideoTrack?: SelectedVideoTrack; // android
   subtitleStyle?: SubtitleStyle; // android
+  shutterColor?: string; // Android
   textTracks?: TextTracks;
   testID?: string;
-  trackId?: string; // Android
   useTextureView?: boolean; // Android
   useSecureView?: boolean; // Android
   volume?: number;
   localSourceEncryptionKeyScheme?: string;
   debug?: DebugConfig;
   allowsExternalPlayback?: boolean; // iOS
+  controlsStyles?: ControlsStyles; // Android
 }
