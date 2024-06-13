@@ -1,5 +1,8 @@
 #import "React/RCTViewManager.h"
 #import <React/RCTBridge.h>
+#import <React/RCTBridgeModule.h>
+#import <React/RCTEventDispatcher.h>
+#import "React/RCTEventEmitter.h"
 
 @interface RCT_EXTERN_MODULE (RCTVideoManager, RCTViewManager)
 
