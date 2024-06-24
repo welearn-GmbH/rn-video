@@ -695,9 +695,9 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
                 self.layer.addSublayer(_playerLayer)
             }
             self.layer.needsDisplayOnBoundsChange = true
-#if os(iOS)
-            _pip?.setupPipController(_playerLayer)
-#endif
+// #if os(iOS)
+//             _pip?.setupPipController(_playerLayer)
+// #endif
         }
     }
 
