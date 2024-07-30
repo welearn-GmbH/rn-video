@@ -8,7 +8,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.exoplayer2.DefaultRenderersFactory;
-import com.google.android.exoplayer2.MediaItem;
+import androidx.media3.common.MediaItem;
 import com.google.android.exoplayer2.database.DatabaseProvider;
 import com.google.android.exoplayer2.database.StandaloneDatabaseProvider;
 import com.google.android.exoplayer2.offline.Download;

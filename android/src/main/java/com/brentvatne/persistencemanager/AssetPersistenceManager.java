@@ -12,7 +12,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.google.android.exoplayer2.MediaItem;
+import androidx.media3.common.MediaItem;
 import com.google.android.exoplayer2.offline.DownloadService;
 import com.google.android.exoplayer2.upstream.DataSource;
 
@@ -48,7 +48,8 @@ public class AssetPersistenceManager extends ReactContextBaseJavaModule  {
             DownloadService.start(appContext, AssetDownloadService.class);
         } catch (IllegalStateException e) {
             if (Build.VERSION.SDK_INT >= 34) {
-                DownloadService.startForeground(appContext, AssetDownloadService.class, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+                Integer type = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC;
+                DownloadService.startForeground(appContext, AssetDownloadService.class, type);
             } else {
                 DownloadService.startForeground(appContext, AssetDownloadService.class);
             }

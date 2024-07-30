@@ -12,18 +12,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.PlaybackParameters;
-import com.google.android.exoplayer2.Player;
+import androidx.media3.common.C;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.PlaybackParameters;
+import androidx.media3.common.Player;
 import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.Tracks;
-import com.google.android.exoplayer2.text.Cue;
+import androidx.media3.common.Timeline;
+import androidx.media3.common.Tracks;
+import androidx.media3.common.text.Cue;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.SubtitleView;
 import com.google.android.exoplayer2.util.Assertions;
-import com.google.android.exoplayer2.video.VideoSize;
+import androidx.media3.common.VideoSize;
 
 import java.util.List;
 

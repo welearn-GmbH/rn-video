@@ -45,7 +45,7 @@ buildscript {
 
 dependencies {
     implementation "com.facebook.react:react-native:${safeExtGet('reactNativeVersion', '+')}"
-    implementation('com.google.android.exoplayer:exoplayer:2.18.1') {
+    implementation('androidx.media3:media3-exoplayer:1.1.1') {
         exclude group: 'com.android.support'
     }
 
@@ -55,7 +55,7 @@ dependencies {
     implementation "androidx.media:media:1.1.0"
     implementation "androidx.activity:activity:1.4.0"
 
-    implementation('com.google.android.exoplayer:extension-okhttp:2.18.1') {
+    implementation('androidx.media3:media3-datasource-okhttp:1.1.1') {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
 

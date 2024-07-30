@@ -4,7 +4,7 @@ import java.io.IOException;
 import com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy;
 import com.google.android.exoplayer2.upstream.HttpDataSource.HttpDataSourceException;
 import com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy.LoadErrorInfo;
-import com.google.android.exoplayer2.C;
+import androidx.media3.common.C;
 
 public final class ReactExoplayerLoadErrorHandlingPolicy extends DefaultLoadErrorHandlingPolicy {
   private int minLoadRetryCount = Integer.MAX_VALUE;
