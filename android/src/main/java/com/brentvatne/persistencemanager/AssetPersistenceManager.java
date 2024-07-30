@@ -2,6 +2,7 @@ package com.brentvatne.exoplayer.persistencemanager;
 
 import android.net.Uri;
 import androidx.annotation.Nullable;
+import android.content.pm.ServiceInfo;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
@@ -45,7 +46,11 @@ public class AssetPersistenceManager extends ReactContextBaseJavaModule  {
         try {
             DownloadService.start(appContext, AssetDownloadService.class);
         } catch (IllegalStateException e) {
-            DownloadService.startForeground(appContext, AssetDownloadService.class);
+            if (Build.VERSION.SDK_INT >= 34) {
+                DownloadService.startForeground(appContext, AssetDownloadService.class, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            } else {
+                DownloadService.startForeground(appContext, AssetDownloadService.class);
+            }
         }
     }
 

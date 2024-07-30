@@ -2,7 +2,8 @@
           package="com.brentvatne.react">
     <application>
         <service android:name="com.brentvatne.exoplayer.persistencemanager.AssetDownloadService"
-            android:exported="false">
+            android:exported="false"
+            android:foregroundServiceType="dataSync">
             <!-- This is needed for Scheduler -->
             <intent-filter>
                 <action android:name="com.google.android.exoplayer.downloadService.action.RESTART"/>
@@ -16,4 +17,5 @@
     </application>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 </manifest>
